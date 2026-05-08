@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toggleCourse, deleteCourse } from "@/lib/actions";
 import { FiTrash2 } from "react-icons/fi";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface Course {
   id: number;
@@ -13,6 +14,8 @@ interface Course {
 
 export function CourseList({ courses }: { courses: Course[] }) {
   const [toggling, setToggling] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleToggle(id: number) {
     setToggling(id);
@@ -20,9 +23,12 @@ export function CourseList({ courses }: { courses: Course[] }) {
     setToggling(null);
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this course?")) return;
-    await deleteCourse(id);
+  async function handleDelete() {
+    if (deleteConfirm === null) return;
+    setDeleting(true);
+    await deleteCourse(deleteConfirm);
+    setDeleting(false);
+    setDeleteConfirm(null);
   }
 
   if (courses.length === 0) {
@@ -51,12 +57,20 @@ export function CourseList({ courses }: { courses: Course[] }) {
             <button onClick={() => handleToggle(course.id)} disabled={toggling === course.id} className="text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-50">
               {toggling === course.id ? "..." : course.isActive ? "Deactivate" : "Activate"}
             </button>
-            <button onClick={() => handleDelete(course.id)} className="text-red-400 hover:text-red-600 transition">
+            <button onClick={() => setDeleteConfirm(course.id)} disabled={deleting} className="text-red-400 hover:text-red-600 transition disabled:opacity-50">
               <FiTrash2 className="text-sm" />
             </button>
           </div>
         ))}
       </div>
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        title="Delete Course"
+        message="Are you sure you want to delete this course? This action cannot be undone."
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => { setDeleteConfirm(null); setDeleting(false); }}
+      />
     </div>
   );
 }

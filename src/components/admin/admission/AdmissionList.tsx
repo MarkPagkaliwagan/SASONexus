@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { updateStudentResult, rescheduleStudent, deleteStudent, getSchedulesByLevel, saveStudentExamResult } from "@/lib/actions";
 import { FiClipboard, FiCalendar, FiX, FiTrash2, FiEye, FiSearch } from "react-icons/fi";
 import { ExamResultModal } from "./ExamResultModal";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface PreAdmissionData {
   id: number;
@@ -356,6 +357,8 @@ export function AdmissionList({ students, preAdmissionMap = {}, academicYearOpti
   const [examResultItem, setExamResultItem] = useState<Student | null>(null);
   const [rescheduleItem, setRescheduleItem] = useState<Student | null>(null);
   const [examResultSaving, setExamResultSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
   const [academicYear, setAcademicYear] = useState("all");
@@ -388,7 +391,7 @@ export function AdmissionList({ students, preAdmissionMap = {}, academicYearOpti
       }
     });
     return result;
-  }, [students, search, sort]);
+  }, [students, search, sort, academicYear]);
 
   async function handleStatus(id: number, status: string) {
     setUpdating(id);
@@ -396,9 +399,12 @@ export function AdmissionList({ students, preAdmissionMap = {}, academicYearOpti
     setUpdating(null);
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this admission record?")) return;
-    await deleteStudent(id);
+  async function handleDelete() {
+    if (deleteConfirm === null) return;
+    setDeleting(true);
+    await deleteStudent(deleteConfirm);
+    setDeleting(false);
+    setDeleteConfirm(null);
   }
 
   if (students.length === 0) return null;
@@ -410,25 +416,26 @@ export function AdmissionList({ students, preAdmissionMap = {}, academicYearOpti
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Admissions ({filtered.length})</h2>
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848] w-48" />
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                  <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848] w-48" />
+                </div>
+                <select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848]">
+                  <option value="all">All A.Y.</option>
+                  {academicYearOptions.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
               </div>
-              <select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848]">
-                <option value="all">All A.Y.</option>
-                {academicYearOptions.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
               <select value={sort} onChange={(e) => setSort(e.target.value)}
                 className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848]">
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
                 <option value="name-asc">Name A-Z</option>
                 <option value="name-desc">Name Z-A</option>
-                <option value="academic-year">Academic Year</option>
               </select>
             </div>
           </div>
@@ -446,7 +453,7 @@ export function AdmissionList({ students, preAdmissionMap = {}, academicYearOpti
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">No results found.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">{academicYear !== "all" ? `No data found for A.Y. ${academicYear}.` : "No results found."}</td></tr>
               ) : filtered.map((s) => (
                 <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                   <td className="px-6 py-4">
@@ -489,7 +496,7 @@ export function AdmissionList({ students, preAdmissionMap = {}, academicYearOpti
                           <FiCalendar className="text-sm" />
                         </button>
                       )}
-                      <button onClick={() => handleDelete(s.id)} className="text-red-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Delete">
+                      <button onClick={() => setDeleteConfirm(s.id)} disabled={deleting} className="text-red-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50" title="Delete">
                         <FiTrash2 className="text-sm" />
                       </button>
                     </div>
@@ -518,6 +525,14 @@ export function AdmissionList({ students, preAdmissionMap = {}, academicYearOpti
         />
       )}
       {rescheduleItem && <RescheduleModal student={rescheduleItem} onClose={() => setRescheduleItem(null)} />}
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        title="Delete Admission Record"
+        message="Are you sure you want to delete this admission record? This action cannot be undone."
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => { setDeleteConfirm(null); setDeleting(false); }}
+      />
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toggleStrand, deleteStrand } from "@/lib/actions";
 import { FiTrash2 } from "react-icons/fi";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface Strand {
   id: number;
@@ -13,6 +14,8 @@ interface Strand {
 
 export function StrandList({ strands }: { strands: Strand[] }) {
   const [toggling, setToggling] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleToggle(id: number) {
     setToggling(id);
@@ -20,9 +23,12 @@ export function StrandList({ strands }: { strands: Strand[] }) {
     setToggling(null);
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this strand?")) return;
-    await deleteStrand(id);
+  async function handleDelete() {
+    if (deleteConfirm === null) return;
+    setDeleting(true);
+    await deleteStrand(deleteConfirm);
+    setDeleting(false);
+    setDeleteConfirm(null);
   }
 
   if (strands.length === 0) {
@@ -51,12 +57,20 @@ export function StrandList({ strands }: { strands: Strand[] }) {
             <button onClick={() => handleToggle(strand.id)} disabled={toggling === strand.id} className="text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-50">
               {toggling === strand.id ? "..." : strand.isActive ? "Deactivate" : "Activate"}
             </button>
-            <button onClick={() => handleDelete(strand.id)} className="text-red-400 hover:text-red-600 transition">
+            <button onClick={() => setDeleteConfirm(strand.id)} disabled={deleting} className="text-red-400 hover:text-red-600 transition disabled:opacity-50">
               <FiTrash2 className="text-sm" />
             </button>
           </div>
         ))}
       </div>
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        title="Delete Strand"
+        message="Are you sure you want to delete this strand? This action cannot be undone."
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => { setDeleteConfirm(null); setDeleting(false); }}
+      />
     </div>
   );
 }

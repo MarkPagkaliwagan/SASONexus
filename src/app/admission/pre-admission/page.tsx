@@ -451,6 +451,14 @@ export default function PreAdmissionPage() {
                         </select>
                       </div>
                       <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Grade Level</label>
+                        <select name="gradeLevel" value={formData.gradeLevel} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
+                          <option value="">Select Grade Level</option>
+                          <option value="Grade 11">Grade 11</option>
+                          <option value="Grade 12">Grade 12</option>
+                        </select>
+                      </div>
+                      <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">1st Choice (Strand)</label>
                         <select name="firstChoice" value={formData.firstChoice} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
                           <option value="">{strands.length === 0 ? "No data available" : "Select Strand"}</option>

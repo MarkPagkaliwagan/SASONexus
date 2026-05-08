@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { updatePreAdmissionStatus, deletePreAdmission, updateExamResult } from "@/lib/actions";
-import { FiTrash2, FiEye, FiX, FiSearch, FiClipboard } from "react-icons/fi";
-import { ExamResultModal } from "./ExamResultModal";
+import { updatePreAdmissionStatus, deletePreAdmission } from "@/lib/actions";
+import { FiTrash2, FiEye, FiX, FiSearch } from "react-icons/fi";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface PreAdmissionItem {
   id: number;
@@ -280,8 +280,8 @@ function StatusDropdown({ item, onStatusChange, updating }: { item: PreAdmission
 export function PreAdmissionList({ items, scheduleMap = {}, academicYearOptions = [] }: { items: PreAdmissionItem[]; scheduleMap?: Record<string, ScheduleInfo>; academicYearOptions?: string[] }) {
   const [updating, setUpdating] = useState<number | null>(null);
   const [detailItem, setDetailItem] = useState<PreAdmissionItem | null>(null);
-  const [examResultItem, setExamResultItem] = useState<PreAdmissionItem | null>(null);
-  const [examResultSaving, setExamResultSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
@@ -324,9 +324,12 @@ export function PreAdmissionList({ items, scheduleMap = {}, academicYearOptions 
     setUpdating(null);
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this pre-admission application?")) return;
-    await deletePreAdmission(id);
+  async function handleDelete() {
+    if (deleteConfirm === null) return;
+    setDeleting(true);
+    await deletePreAdmission(deleteConfirm);
+    setDeleting(false);
+    setDeleteConfirm(null);
   }
 
   if (items.length === 0) {
@@ -437,15 +440,9 @@ export function PreAdmissionList({ items, scheduleMap = {}, academicYearOptions 
                         <FiEye className="text-sm" />
                       </button>
                       <button
-                        onClick={() => setExamResultItem(item)}
-                        className="text-green-500 hover:text-green-600 transition p-1.5 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
-                        title="Exam result"
-                      >
-                        <FiClipboard className="text-sm" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-red-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => setDeleteConfirm(item.id)}
+                        disabled={deleting}
+                        className="text-red-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
                         title="Delete"
                       >
                         <FiTrash2 className="text-sm" />
@@ -460,21 +457,14 @@ export function PreAdmissionList({ items, scheduleMap = {}, academicYearOptions 
       </div>
 
       {detailItem && <DetailModal item={detailItem} onClose={() => setDetailItem(null)} scheduleMap={scheduleMap} />}
-      {examResultItem && (
-        <ExamResultModal
-          isOpen
-          onClose={() => setExamResultItem(null)}
-          applicationLevel={examResultItem.applicationLevel}
-          examResult={examResultItem.examResult}
-          onSave={async (data) => {
-            setExamResultSaving(true);
-            await updateExamResult(examResultItem.id, data);
-            setExamResultSaving(false);
-            setExamResultItem(null);
-          }}
-          saving={examResultSaving}
-        />
-      )}
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        title="Delete Pre-Admission"
+        message="Are you sure you want to delete this pre-admission application? This action cannot be undone."
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => { setDeleteConfirm(null); setDeleting(false); }}
+      />
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toggleSchedule, deleteSchedule, updateScheduleSlots } from "@/lib/actions";
 import { FiTrash2, FiRefreshCw } from "react-icons/fi";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface Schedule {
   id: number;
@@ -23,6 +24,9 @@ const levelColors: Record<string, string> = {
 
 export function ScheduleList({ schedules }: { schedules: Schedule[] }) {
   const [toggling, setToggling] = useState<number | null>(null);
+  const [resetting, setResetting] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleToggle(id: number) {
     setToggling(id);
@@ -30,13 +34,18 @@ export function ScheduleList({ schedules }: { schedules: Schedule[] }) {
     setToggling(null);
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this schedule slot?")) return;
-    await deleteSchedule(id);
+  async function handleDelete() {
+    if (deleteConfirm === null) return;
+    setDeleting(true);
+    await deleteSchedule(deleteConfirm);
+    setDeleting(false);
+    setDeleteConfirm(null);
   }
 
   async function handleReset(id: number, maxSlots: number) {
+    setResetting(id);
     await updateScheduleSlots(id, maxSlots);
+    setResetting(null);
   }
 
   if (schedules.length === 0) {
@@ -82,17 +91,25 @@ export function ScheduleList({ schedules }: { schedules: Schedule[] }) {
                 {toggling === s.id ? "..." : s.isAvailable ? "Close" : "Open"}
               </button>
 
-              <button onClick={() => handleReset(s.id, s.maxSlots)} title="Reset slots" className="text-blue-400 hover:text-blue-600 transition">
-                <FiRefreshCw className="text-sm" />
+              <button onClick={() => handleReset(s.id, s.maxSlots)} disabled={resetting === s.id} title="Reset slots" className="text-blue-400 hover:text-blue-600 transition disabled:opacity-50">
+                {resetting === s.id ? <FiRefreshCw className="text-sm animate-spin" /> : <FiRefreshCw className="text-sm" />}
               </button>
 
-              <button onClick={() => handleDelete(s.id)} className="text-red-400 hover:text-red-600 transition">
+              <button onClick={() => setDeleteConfirm(s.id)} disabled={deleting} className="text-red-400 hover:text-red-600 transition disabled:opacity-50">
                 <FiTrash2 className="text-sm" />
               </button>
             </div>
           );
         })}
       </div>
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        title="Delete Schedule"
+        message="Are you sure you want to delete this schedule slot? This action cannot be undone."
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => { setDeleteConfirm(null); setDeleting(false); }}
+      />
     </div>
   );
 }
