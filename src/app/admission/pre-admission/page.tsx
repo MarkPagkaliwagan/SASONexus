@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { FaUser, FaUsers, FaGraduationCap, FaCalendarAlt, FaShieldAlt, FaImage } from "react-icons/fa";
+import { submitPreAdmission, getSchedulesByLevel, getAcademicYears, getCollegeCourses, getShsStrands } from "@/lib/actions";
+import { FaUser, FaUsers, FaGraduationCap, FaCalendarAlt, FaShieldAlt, FaImage, FaSpinner } from "react-icons/fa";
 
 const steps = [
   { id: 1, name: "Application Type", icon: FaUser },
@@ -14,27 +15,29 @@ const steps = [
   { id: 6, name: "Data Privacy", icon: FaShieldAlt },
 ];
 
-const academicYears: string[] = [];
-const semesters: string[] = [];
 const religions = ["Roman Catholic", "Christian", "Muslim", "Iglesia ni Cristo", "Buddhist", "Others"];
 const civilStatuses = ["Single", "Married", "Widowed", "Separated"];
 const citizenships = ["Filipino", "Dual Citizen", "Foreign National"];
 const residences = ["Own House", "Rented", "Living with Relatives", "Dormitory/Boarding House"];
-const collegePrograms: string[] = [];
-const shsStrands: string[] = [];
-const tracks: string[] = [];
 const educationalAttainment = ["Elementary Undergraduate", "Elementary Graduate", "High School Undergraduate", "High School Graduate", "Senior High School Graduate", "College Undergraduate", "College Graduate", "Post Graduate / Master's", "Post Graduate / Doctorate"];
 const occupations = ["Employed", "Self-Employed / Business", "Professional", "Government Employee", "OFW", "Housewife / Homemaker", "Unemployed", "Retired", "Deceased", "Others"];
 
 export default function PreAdmissionPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
+  const [pictureFile, setPictureFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [provinces, setProvinces] = useState<{code: string, name: string}[]>([]);
   const [cities, setCities] = useState<{code: string, name: string}[]>([]);
   const [municipalities, setMunicipalities] = useState<{code: string, name: string}[]>([]);
   const [barangays, setBarangays] = useState<{code: string, name: string}[]>([]);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [schedules, setSchedules] = useState<{ id: number; level: string; date: string | null; time: string | null; availableSlots: number }[]>([]);
+  const [years, setYears] = useState<{ id: number; year: string; semesters: { id: number; name: string; isActive: boolean }[] }[]>([]);
+  const [courses, setCourses] = useState<{ id: number; name: string; code: string | null }[]>([]);
+  const [strands, setStrands] = useState<{ id: number; name: string; code: string | null }[]>([]);
   const [formData, setFormData] = useState({
     applicationLevel: "",
     academicYear: "",
@@ -90,8 +93,10 @@ export default function PreAdmissionPage() {
     dateOfGraduation: "",
     honorsAwards: "",
     isTransferee: "",
-    preferredDate: "",
-    preferredTime: "",
+    freePreAdmission: "",
+    previousSchool: "",
+    stabCode: "",
+    preferredSchedule: "",
     privacyAgreed: false,
   });
 
@@ -101,6 +106,20 @@ export default function PreAdmissionPage() {
       .then((data) => setProvinces(data))
       .catch(() => setProvinces([]));
   }, []);
+
+  useEffect(() => {
+    getAcademicYears().then(setYears);
+    getCollegeCourses().then(setCourses);
+    getShsStrands().then(setStrands);
+  }, []);
+
+  useEffect(() => {
+    if (formData.applicationLevel) {
+      getSchedulesByLevel(formData.applicationLevel).then(setSchedules);
+    } else {
+      setSchedules([]);
+    }
+  }, [formData.applicationLevel]);
 
   const fetchCitiesMunicipalities = (provinceCode: string) => {
     setLoadingLocation(true);
@@ -253,6 +272,7 @@ export default function PreAdmissionPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      setPictureFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPicturePreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -276,7 +296,23 @@ export default function PreAdmissionPage() {
 
   const nextStep = () => { if (currentStep < 6) setCurrentStep(currentStep + 1); };
   const prevStep = () => { if (currentStep > 1) setCurrentStep(currentStep - 1); };
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); alert("Application submitted successfully!"); };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      for (const [key, val] of Object.entries(formData)) {
+        fd.set(key, String(val));
+      }
+      if (pictureFile) fd.set("picture", pictureFile);
+      await submitPreAdmission(fd);
+      setSubmitted(true);
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const renderField = (name: string, type: string, placeholder: string, required: boolean = false) => {
     const fieldError = errors[name];
@@ -295,6 +331,28 @@ export default function PreAdmissionPage() {
       </>
     );
   };
+
+  if (submitted) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen bg-gray-50 py-8 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Submitted!</h2>
+              <p className="text-gray-600">Your pre-admission application has been received. Please wait for further instructions from the admission office.</p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -351,29 +409,30 @@ export default function PreAdmissionPage() {
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Academic Year</label>
                         <select name="academicYear" value={formData.academicYear} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">{academicYears.length === 0 ? "No data available" : "Select Academic Year"}</option>
-                          {academicYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                          <option value="">{years.length === 0 ? "No data available" : "Select Academic Year"}</option>
+                          {years.map((y) => <option key={y.id} value={y.year}>{y.year}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Semester</label>
                         <select name="semester" value={formData.semester} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">{semesters.length === 0 ? "No data available" : "Select Semester"}</option>
-                          {semesters.map((s) => <option key={s} value={s}>{s}</option>)}
+                          <option value="">Select Semester</option>
+                          <option value="1st Semester">1st Semester</option>
+                          <option value="2nd Semester">2nd Semester</option>
                         </select>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">1st Choice</label>
                         <select name="firstChoice" value={formData.firstChoice} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">{collegePrograms.length === 0 ? "No data available" : "1st Choice"}</option>
-                          {collegePrograms.map((p) => <option key={p} value={p}>{p}</option>)}
+                          <option value="">{courses.length === 0 ? "No data available" : "1st Choice"}</option>
+                          {courses.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">2nd Choice</label>
                         <select name="secondChoice" value={formData.secondChoice} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">{collegePrograms.length === 0 ? "No data available" : "2nd Choice"}</option>
-                          {collegePrograms.filter((p) => p !== formData.firstChoice).map((p) => <option key={p} value={p}>{p}</option>)}
+                          <option value="">{courses.length === 0 ? "No data available" : "2nd Choice"}</option>
+                          {courses.filter((c) => c.name !== formData.firstChoice).map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                         </select>
                       </div>
                     </div>
@@ -387,23 +446,15 @@ export default function PreAdmissionPage() {
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Academic Year</label>
                         <select name="academicYear" value={formData.academicYear} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">{academicYears.length === 0 ? "No data available" : "Select Academic Year"}</option>
-                          {academicYears.map((y) => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Grade Level</label>
-                        <select name="gradeLevel" value={formData.gradeLevel} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">Select Grade Level</option>
-                          <option value="Grade 11">Grade 11</option>
-                          <option value="Grade 12">Grade 12</option>
+                          <option value="">{years.length === 0 ? "No data available" : "Select Academic Year"}</option>
+                          {years.map((y) => <option key={y.id} value={y.year}>{y.year}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">1st Choice (Strand)</label>
                         <select name="firstChoice" value={formData.firstChoice} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">{shsStrands.length === 0 ? "No data available" : "Select Strand"}</option>
-                          {shsStrands.map((s) => <option key={s} value={s}>{s}</option>)}
+                          <option value="">{strands.length === 0 ? "No data available" : "Select Strand"}</option>
+                          {strands.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
                         </select>
                       </div>
                     </div>
@@ -417,8 +468,8 @@ export default function PreAdmissionPage() {
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Academic Year</label>
                         <select name="academicYear" value={formData.academicYear} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                          <option value="">{academicYears.length === 0 ? "No data available" : "Select Academic Year"}</option>
-                          {academicYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                          <option value="">{years.length === 0 ? "No data available" : "Select Academic Year"}</option>
+                          {years.map((y) => <option key={y.id} value={y.year}>{y.year}</option>)}
                         </select>
                       </div>
                       <div>
@@ -800,15 +851,14 @@ export default function PreAdmissionPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Track</label>
                     <select name="track" value={formData.track} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                      <option value="">{tracks.length === 0 ? "No data available" : "Select Track"}</option>
-                      {tracks.map((t) => <option key={t} value={t}>{t}</option>)}
+                      <option value="">No data available</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Strand</label>
                     <select name="strand" value={formData.strand} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                      <option value="">{shsStrands.length === 0 ? "No data available" : "Select Strand"}</option>
-                      {shsStrands.map((s) => <option key={s} value={s}>{s}</option>)}
+                      <option value="">{strands.length === 0 ? "No data available" : "Select Strand"}</option>
+                      {strands.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
                     </select>
                   </div>
                   <div>
@@ -831,29 +881,67 @@ export default function PreAdmissionPage() {
             {/* Step 5: Schedule */}
             {currentStep === 5 && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">PLEASE CHOOSE YOUR SCHEDULE</h2>
-                <p className="text-gray-600 text-sm mb-2">Select date & time</p>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-sm text-yellow-800">
-                  <strong>Note:</strong> Schedule list comes from your backend (ScheduleController). This selects a date/time you prefer for interview/processing.
-                  <p className="mt-2 text-yellow-700">No schedule data available yet. Please contact the admission office or check back later.</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">SCHEDULE & ADMISSION TYPE</h2>
+
+                <div className="mb-6">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Is this a free pre-admission?</p>
+                  <div className="flex gap-3">
+                    {["Yes", "No"].map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, freePreAdmission: opt, previousSchool: opt === "No" ? "" : formData.previousSchool })}
+                        className={`px-6 py-2 border-2 rounded-lg font-semibold transition-all ${formData.freePreAdmission === opt ? "border-[#007848] bg-[#007848] text-white" : "border-gray-200 text-gray-600"}`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Preferred Date</label>
-                    <input type="date" name="preferredDate" value={formData.preferredDate} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none text-gray-900" />
+
+                {formData.freePreAdmission === "Yes" && (
+                  <div className="mb-6 space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">From what school?</label>
+                      <input
+                        type="text"
+                        name="previousSchool"
+                        value={formData.previousSchool}
+                        onChange={handleChange}
+                        placeholder="Enter school name"
+                        required
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">STAB Code</label>
+                      <input
+                        type="text"
+                        name="stabCode"
+                        value={formData.stabCode}
+                        onChange={handleChange}
+                        placeholder="Enter STAB code"
+                        required
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none text-gray-900"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Preferred Time</label>
-                    <select name="preferredTime" value={formData.preferredTime} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
-                      <option value="">Select Time</option>
-                      <option value="8:00 AM">8:00 AM</option>
-                      <option value="9:00 AM">9:00 AM</option>
-                      <option value="10:00 AM">10:00 AM</option>
-                      <option value="1:00 PM">1:00 PM</option>
-                      <option value="2:00 PM">2:00 PM</option>
-                      <option value="3:00 PM">3:00 PM</option>
+                )}
+
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Preferred Schedule</label>
+                  {!formData.applicationLevel ? (
+                    <p className="text-sm text-gray-400">Please select an application type first (Step 1).</p>
+                  ) : (
+                    <select name="preferredSchedule" value={formData.preferredSchedule} onChange={handleChange} required className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007848] outline-none bg-white text-gray-900">
+                      <option value="">{schedules.length === 0 ? "No schedules available" : "Select a schedule..."}</option>
+                      {schedules.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.date && s.time ? `${s.date} - ${s.time}` : s.date || s.time || `Slot ${s.id}`} ({s.availableSlots} slots left)
+                        </option>
+                      ))}
                     </select>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -903,10 +991,10 @@ export default function PreAdmissionPage() {
               ) : (
                 <button
                   type="submit"
-                  disabled={!formData.privacyAgreed}
-                  className={`px-8 py-3 font-bold rounded-lg transition-colors ${formData.privacyAgreed ? "bg-[#007848] text-white hover:bg-[#005a36]" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                  disabled={!formData.privacyAgreed || submitting}
+                  className={`px-8 py-3 font-bold rounded-lg transition-colors flex items-center gap-2 ${formData.privacyAgreed && !submitting ? "bg-[#007848] text-white hover:bg-[#005a36]" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                 >
-                  Submit Application
+                  {submitting ? <><FaSpinner className="animate-spin" /> Submitting...</> : "Submit Application"}
                 </button>
               )}
             </div>

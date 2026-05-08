@@ -1,9 +1,54 @@
+"use client";
+
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FaUser, FaLock, FaEnvelope, FaShieldAlt, FaCheckCircle } from "react-icons/fa";
+import { FaUser, FaLock, FaEnvelope, FaShieldAlt, FaCheckCircle, FaEye, FaEyeSlash } from "react-icons/fa";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/auth/session");
+      const session = await res.json();
+      const role = session?.user?.role;
+
+      if (role === "super_admin") {
+        router.push("/portal/admin");
+      } else {
+        router.push("/portal/dashboard");
+      }
+    } catch {
+      setError("An error occurred. Please try again.");
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -32,19 +77,19 @@ export default function LoginPage() {
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10">
                     <FaCheckCircle className="text-[10px]" />
                   </span>
-                  <span>Secure access to your student services</span>
+                  <span>Secure access to staff portal</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-white/85">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10">
                     <FaCheckCircle className="text-[10px]" />
                   </span>
-                  <span>Track application and request status</span>
+                  <span>Department-specific dashboard</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-white/85">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10">
                     <FaCheckCircle className="text-[10px]" />
                   </span>
-                  <span>Official portal for enrolled students</span>
+                  <span>Manage student services efficiently</span>
                 </div>
               </div>
             </section>
@@ -54,17 +99,23 @@ export default function LoginPage() {
               <div className="mb-8">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600">
                   <FaShieldAlt className="text-[10px] text-[#007848]" />
-                  Secure Sign In
+                  Staff Secure Sign In
                 </div>
                 <h2 className="text-3xl font-semibold tracking-tight text-gray-900">
                   Welcome back
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-gray-500">
-                  Enter your credentials to continue to the portal.
+                  Enter your staff credentials to access the portal.
                 </p>
               </div>
 
-              <form className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                    {error}
+                  </div>
+                )}
+
                 <div>
                   <label
                     htmlFor="email"
@@ -77,7 +128,10 @@ export default function LoginPage() {
                     <input
                       id="email"
                       type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@sanpablocolleges.edu.ph"
+                      required
                       className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#007848] focus:bg-white focus:ring-4 focus:ring-[#007848]/10"
                     />
                   </div>
@@ -94,41 +148,35 @@ export default function LoginPage() {
                     <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
                     <input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#007848] focus:bg-white focus:ring-4 focus:ring-[#007848]/10"
+                      required
+                      className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-11 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#007848] focus:bg-white focus:ring-4 focus:ring-[#007848]/10"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-4">
-                  <label className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-[#007848] focus:ring-[#007848]"
-                    />
-                    <span className="text-sm text-gray-600">Remember me</span>
-                  </label>
-
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm font-medium text-[#007848] transition hover:text-[#005a36]"
-                  >
-                    Forgot password?
-                  </Link>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full rounded-2xl bg-[#007848] py-3 text-sm font-semibold text-white transition hover:bg-[#005f38] focus:outline-none focus:ring-4 focus:ring-[#007848]/20"
+                  disabled={loading}
+                  className="w-full rounded-2xl bg-[#007848] py-3 text-sm font-semibold text-white transition hover:bg-[#005f38] focus:outline-none focus:ring-4 focus:ring-[#007848]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sign in
+                  {loading ? "Signing in..." : "Sign in"}
                 </button>
               </form>
 
               <div className="mt-8 border-t border-gray-100 pt-5">
                 <p className="text-center text-sm text-gray-500">
-                  Don&apos;t have an account?{" "}
+                  This portal is for authorized SASO staff only.{" "}
                   <Link
                     href="/admission"
                     className="font-semibold text-[#007848] transition hover:text-[#005a36]"
@@ -141,7 +189,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-4 text-center text-xs text-gray-400">
-            © {new Date().getFullYear()} San Pablo Colleges. All rights reserved.
+            &copy; {new Date().getFullYear()} San Pablo Colleges. All rights reserved.
           </p>
         </div>
       </main>

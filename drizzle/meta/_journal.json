@@ -8,6 +8,62 @@
       "when": 1778179256402,
       "tag": "0000_fair_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778179689780,
+      "tag": "0001_purple_turbo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778195952265,
+      "tag": "0002_sleepy_silk_fever",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778217443776,
+      "tag": "0003_classy_sharon_carter",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778221937435,
+      "tag": "0004_curved_lady_vermin",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778235057557,
+      "tag": "0005_add_students_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778235139881,
+      "tag": "0006_add_exam_result",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778235962498,
+      "tag": "0007_add_student_exam_result",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778238459787,
+      "tag": "0008_add_student_academic_year",
+      "breakpoints": true
     }
   ]
 }
