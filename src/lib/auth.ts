@@ -2,7 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
-import { staffAccounts, departments, positions } from "@/db/schema";
+import { staffAccounts, sasoUnits, positions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export const authOptions: NextAuthOptions = {
@@ -41,20 +41,20 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          let departmentName: string | null = null;
-          let departmentSlug: string | null = null;
+          let unitName: string | null = null;
+          let unitSlug: string | null = null;
           let positionName: string | null = null;
 
-          if (user.departmentId) {
-            const depts = await db
+          if (user.unitId) {
+            const units = await db
               .select()
-              .from(departments)
-              .where(eq(departments.id, user.departmentId))
+              .from(sasoUnits)
+              .where(eq(sasoUnits.id, user.unitId))
               .limit(1);
-            const dept = depts[0];
-            if (dept) {
-              departmentName = dept.name;
-              departmentSlug = dept.slug;
+            const unit = units[0];
+            if (unit) {
+              unitName = unit.name;
+              unitSlug = unit.slug;
             }
           }
 
@@ -73,9 +73,9 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             avatarUrl: user.avatarUrl,
             role: user.role,
-            departmentId: user.departmentId,
-            departmentName,
-            departmentSlug,
+            unitId: user.unitId,
+            unitName,
+            unitSlug,
             positionId: user.positionId,
             positionName,
           };
@@ -96,9 +96,9 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.avatarUrl = user.avatarUrl;
-        token.departmentId = user.departmentId;
-        token.departmentName = user.departmentName;
-        token.departmentSlug = user.departmentSlug;
+        token.unitId = user.unitId;
+        token.unitName = user.unitName;
+        token.unitSlug = user.unitSlug;
         token.positionId = user.positionId;
         token.positionName = user.positionName;
       }
@@ -109,9 +109,9 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.avatarUrl = token.avatarUrl as string | null;
-        session.user.departmentId = token.departmentId as number | null;
-        session.user.departmentName = token.departmentName as string | null;
-        session.user.departmentSlug = token.departmentSlug as string | null;
+        session.user.unitId = token.unitId as number | null;
+        session.user.unitName = token.unitName as string | null;
+        session.user.unitSlug = token.unitSlug as string | null;
         session.user.positionId = token.positionId as number | null;
         session.user.positionName = token.positionName as string | null;
       }

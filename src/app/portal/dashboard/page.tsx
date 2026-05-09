@@ -13,7 +13,7 @@ export default async function StaffDashboard() {
     redirect("/login");
   }
 
-  const { name, avatarUrl, departmentName, positionName } = session.user;
+  const { name, avatarUrl, unitName, positionName } = session.user;
 
   return (
     <ThemeProvider>
@@ -39,7 +39,7 @@ export default async function StaffDashboard() {
                 </div>
               )}
               <div>
-                <span className="font-semibold text-gray-900 dark:text-white">{departmentName}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{unitName}</span>
                 <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight">{positionName}</p>
               </div>
             </div>
@@ -64,7 +64,7 @@ export default async function StaffDashboard() {
               Welcome, {name}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mb-8">
-              {departmentName} &middot; {positionName}
+              {unitName} &middot; {positionName}
             </p>
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8">
               <p className="text-sm text-gray-400 dark:text-gray-500">

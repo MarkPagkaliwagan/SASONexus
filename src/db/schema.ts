@@ -16,7 +16,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const departments = pgTable("departments", {
+export const sasoUnits = pgTable("saso_units", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull().unique(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
@@ -27,7 +27,7 @@ export const departments = pgTable("departments", {
 export const positions = pgTable("positions", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  departmentId: integer("department_id").notNull().references(() => departments.id, { onDelete: "cascade" }),
+  unitId: integer("unit_id").notNull().references(() => sasoUnits.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -38,28 +38,28 @@ export const staffAccounts = pgTable("staff_accounts", {
   password: varchar("password", { length: 255 }).notNull(),
   avatarUrl: text("avatar_url"),
   role: varchar("role", { length: 50 }).notNull().default("staff"),
-  departmentId: integer("department_id").references(() => departments.id),
+  unitId: integer("unit_id").references(() => sasoUnits.id),
   positionId: integer("position_id").references(() => positions.id),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const departmentsRelations = relations(departments, ({ many }) => ({
+export const sasoUnitsRelations = relations(sasoUnits, ({ many }) => ({
   positions: many(positions),
   staffAccounts: many(staffAccounts),
 }));
 
 export const positionsRelations = relations(positions, ({ one }) => ({
-  department: one(departments, {
-    fields: [positions.departmentId],
-    references: [departments.id],
+  unit: one(sasoUnits, {
+    fields: [positions.unitId],
+    references: [sasoUnits.id],
   }),
 }));
 
 export const staffAccountsRelations = relations(staffAccounts, ({ one }) => ({
-  department: one(departments, {
-    fields: [staffAccounts.departmentId],
-    references: [departments.id],
+  unit: one(sasoUnits, {
+    fields: [staffAccounts.unitId],
+    references: [sasoUnits.id],
   }),
   position: one(positions, {
     fields: [staffAccounts.positionId],
@@ -82,10 +82,18 @@ export const semesters = pgTable("semesters", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const collegeDepartments = pgTable("college_departments", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  logo: text("logo"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const collegeCourses = pgTable("college_courses", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }),
+  department: varchar("department", { length: 255 }).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -94,6 +102,16 @@ export const shsStrands = pgTable("shs_strands", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 100 }).notNull().default("General"),
+  image: text("image"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

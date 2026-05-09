@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/db";
-import { staffAccounts, departments } from "@/db/schema";
+import { staffAccounts, sasoUnits } from "@/db/schema";
 import { count, eq } from "drizzle-orm";
 import {
   FiUsers,
@@ -14,7 +14,7 @@ import {
 export default async function AdminDashboard() {
   const [[staffCountResult], [deptCountResult], [activeStaffResult]] = await Promise.all([
     db.select({ count: count() }).from(staffAccounts).where(eq(staffAccounts.role, "staff")),
-    db.select({ count: count() }).from(departments),
+    db.select({ count: count() }).from(sasoUnits),
     db.select({ count: count() }).from(staffAccounts).where(eq(staffAccounts.isActive, true)),
   ]);
 
@@ -24,18 +24,18 @@ export default async function AdminDashboard() {
 
   const deptBreakdown = await db
     .select({
-      deptName: departments.name,
-      deptSlug: departments.slug,
+      deptName: sasoUnits.name,
+      deptSlug: sasoUnits.slug,
       total: count(),
     })
-    .from(departments)
-    .leftJoin(staffAccounts, eq(staffAccounts.departmentId, departments.id))
-    .groupBy(departments.id, departments.name, departments.slug)
-    .orderBy(departments.name);
+    .from(sasoUnits)
+    .leftJoin(staffAccounts, eq(staffAccounts.unitId, sasoUnits.id))
+    .groupBy(sasoUnits.id, sasoUnits.name, sasoUnits.slug)
+    .orderBy(sasoUnits.name);
 
   const recentStaff = await db.query.staffAccounts.findMany({
     where: eq(staffAccounts.role, "staff"),
-    with: { department: true, position: true },
+    with: { unit: true, position: true },
     orderBy: (staff, { desc }) => [desc(staff.createdAt)],
     limit: 5,
   });
@@ -71,7 +71,7 @@ export default async function AdminDashboard() {
         />
         <StatCard
           icon={<FiGrid className="text-lg" />}
-          label="Departments"
+          label="SASO Units"
           value={deptCount}
           color="blue"
         />
@@ -91,7 +91,7 @@ export default async function AdminDashboard() {
               <FiGrid className="text-[#007848] dark:text-[#00a35e] text-sm" />
               <h2 className="font-semibold text-gray-900 dark:text-white">Department Breakdown</h2>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500">{deptCount} departments</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{deptCount} units</span>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-gray-800/50">
             {deptBreakdown.map((dept) => {
@@ -145,7 +145,7 @@ export default async function AdminDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{staff.name}</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                      {staff.department?.name ?? "Unassigned"}
+                      {staff.unit?.name ?? "Unassigned"}
                       {staff.position ? ` · ${staff.position.name}` : ""}
                     </p>
                   </div>
