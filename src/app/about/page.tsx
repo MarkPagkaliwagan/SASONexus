@@ -6,16 +6,7 @@ export default function AboutPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-white">
-        <section className="bg-[#007848] text-white py-20 px-4">
-          <div className="max-w-7xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">About Our Office</h1>
-            <p className="text-green-100 text-lg max-w-2xl mx-auto">
-              Learn more about the Student Affairs and Services Office of San Pablo Colleges.
-            </p>
-          </div>
-        </section>
-
-        <section className="py-16 px-4 max-w-7xl mx-auto">
+        <section className="py-16 px-4 max-w-7xl mx-auto pt-28">
           <div className="max-w-4xl mx-auto">
             <div className="mb-16">
               <h2 className="text-3xl font-bold text-gray-800 mb-6">Office Overview</h2>

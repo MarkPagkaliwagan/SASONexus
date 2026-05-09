@@ -174,7 +174,7 @@ export default function AdmissionPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 pt-20">
         {/* Hero Section */}
         <section className="relative bg-[#007848] overflow-hidden">
           <div className="absolute inset-0 opacity-10">
@@ -183,7 +183,7 @@ export default function AdmissionPage() {
               backgroundSize: "40px 40px",
             }} />
           </div>
-          <div className="relative max-w-6xl mx-auto px-6 py-24 text-center">
+          <div className="relative max-w-6xl mx-auto px-6 py-16 text-center">
             <p className="text-green-300 text-sm font-semibold uppercase tracking-widest mb-3">San Pablo Colleges</p>
             <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-5">Admission Office</h1>
             <p className="text-green-100 text-lg max-w-2xl mx-auto">

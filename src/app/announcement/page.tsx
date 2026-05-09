@@ -37,7 +37,7 @@ export default function AnnouncementPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-white">
-        <section className="bg-[#007848] text-white py-20 px-4">
+        <section className="bg-[#007848] text-white pt-28 pb-16 px-4">
           <div className="max-w-7xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Announcements</h1>
             <p className="text-green-100 text-lg max-w-2xl mx-auto">

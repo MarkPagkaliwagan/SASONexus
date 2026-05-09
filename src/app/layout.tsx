@@ -16,8 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SASO | San Pablo Colleges - Student Affairs and Services Office",
+  title: "Student Affairs & Services Office | San Pablo Colleges",
   description: "Student Affairs and Services Office of San Pablo Colleges - Supporting students in their academic journey.",
+  icons: [
+    { rel: "icon", url: "/SPCLOGO.png" },
+    { rel: "apple-touch-icon", url: "/SPCLOGO.png" },
+  ],
 };
 
 export default async function RootLayout({
