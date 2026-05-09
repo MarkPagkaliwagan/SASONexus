@@ -66,8 +66,8 @@ export default function ServicesPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-white pt-20">
-        <section className="bg-[#007848] text-white py-16 px-4">
+      <main className="min-h-screen bg-white pt-16 md:pt-20">
+        <section className="bg-[#007848] text-white pt-4 pb-16 md:py-16 px-4">
           <div className="max-w-7xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
             <p className="text-green-100 text-lg max-w-2xl mx-auto">

@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { collegeCourses } from "@/db/schema";
+import { collegeCourses, collegeDepartments } from "@/db/schema";
 import { CourseForm } from "@/components/admin/admission/CourseForm";
 import { CourseList } from "@/components/admin/admission/CourseList";
 import { FiChevronRight } from "react-icons/fi";
@@ -7,6 +7,10 @@ import { FiChevronRight } from "react-icons/fi";
 export default async function CoursesPage() {
   const courses = await db.query.collegeCourses.findMany({
     orderBy: (c, { desc }) => [desc(c.createdAt)],
+  });
+
+  const allDepartments = await db.query.collegeDepartments.findMany({
+    orderBy: (d, { asc }) => [asc(d.name)],
   });
 
   return (
@@ -24,10 +28,10 @@ export default async function CoursesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <CourseForm />
+          <CourseForm departments={allDepartments.map((d) => d.name)} />
         </div>
         <div className="lg:col-span-2">
-          <CourseList courses={courses} />
+          <CourseList courses={courses} departments={allDepartments.map((d) => d.name)} deptLogos={Object.fromEntries(allDepartments.map((d) => [d.name, d.logo]))} />
         </div>
       </div>
     </>

@@ -5,7 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
 import {
   staffAccounts, preAdmissions, students,
-  academicYears, semesters, collegeCourses, shsStrands, admissionSchedules
+  academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
+  announcements
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -21,11 +22,11 @@ export async function createStaffAccount(formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const departmentId = parseInt(formData.get("departmentId") as string);
+  const unitId = parseInt(formData.get("unitId") as string);
   const positionId = parseInt(formData.get("positionId") as string);
   const avatar = formData.get("avatar") as File | null;
 
-  if (!name || !email || !password || !departmentId || !positionId) {
+  if (!name || !email || !password || !unitId || !positionId) {
     throw new Error("All fields are required");
   }
 
@@ -42,7 +43,7 @@ export async function createStaffAccount(formData: FormData) {
     email,
     password: hashedPassword,
     role: "staff",
-    departmentId,
+    unitId,
     positionId,
     avatarUrl,
   });
@@ -194,8 +195,23 @@ export async function createCourse(formData: FormData) {
   await requireAdmin();
   const name = formData.get("name") as string;
   const code = formData.get("code") as string;
+  const department = formData.get("department") as string;
   if (!name) throw new Error("Course name is required");
-  await db.insert(collegeCourses).values({ name, code: code || null });
+  if (!department) throw new Error("Department is required");
+  await db.insert(collegeCourses).values({ name, code: code || null, department });
+  revalidatePath("/portal/admin/admission/courses");
+}
+
+export async function upsertCollegeDepartment(name: string, logo: string | null) {
+  await requireAdmin();
+  const existing = await db.select().from(collegeDepartments).where(eq(collegeDepartments.name, name)).limit(1);
+  if (existing[0]) {
+    if (logo) {
+      await db.update(collegeDepartments).set({ logo }).where(eq(collegeDepartments.name, name));
+    }
+  } else {
+    await db.insert(collegeDepartments).values({ name, logo });
+  }
   revalidatePath("/portal/admin/admission/courses");
 }
 
@@ -210,6 +226,39 @@ export async function toggleCourse(id: number) {
 export async function deleteCourse(id: number) {
   await requireAdmin();
   await db.delete(collegeCourses).where(eq(collegeCourses.id, id));
+  revalidatePath("/portal/admin/admission/courses");
+}
+
+export async function updateCourse(id: number, formData: FormData) {
+  await requireAdmin();
+  const name = formData.get("name") as string;
+  const code = formData.get("code") as string;
+  const department = formData.get("department") as string;
+  if (!name) throw new Error("Course name is required");
+  if (!department) throw new Error("Department is required");
+  await db
+    .update(collegeCourses)
+    .set({ name, code: code || null, department })
+    .where(eq(collegeCourses.id, id));
+  revalidatePath("/portal/admin/admission/courses");
+}
+
+export async function updateCollegeDepartment(oldName: string, newName: string, logo: string | null) {
+  await requireAdmin();
+  const existing = await db.select().from(collegeDepartments).where(eq(collegeDepartments.name, oldName)).limit(1);
+  if (!existing[0]) throw new Error("Department not found");
+  await db.update(collegeDepartments).set({ name: newName, logo: logo ?? existing[0].logo }).where(eq(collegeDepartments.name, oldName));
+  if (oldName !== newName) {
+    await db.update(collegeCourses).set({ department: newName }).where(eq(collegeCourses.department, oldName));
+  }
+  revalidatePath("/portal/admin/admission/courses");
+}
+
+export async function deleteCollegeDepartment(name: string) {
+  await requireAdmin();
+  const courses = await db.select().from(collegeCourses).where(eq(collegeCourses.department, name)).limit(1);
+  if (courses[0]) throw new Error("Cannot delete department with existing courses. Remove or reassign courses first.");
+  await db.delete(collegeDepartments).where(eq(collegeDepartments.name, name));
   revalidatePath("/portal/admin/admission/courses");
 }
 
@@ -269,11 +318,70 @@ export async function getCollegeCourses() {
   });
 }
 
+export async function getCollegeDepartmentsWithCourses() {
+  const departments = await db.query.collegeDepartments.findMany({
+    orderBy: (d, { asc }) => [asc(d.name)],
+  });
+  const courses = await db.query.collegeCourses.findMany({
+    where: (c, { eq }) => eq(c.isActive, true),
+    orderBy: (c, { asc }) => [asc(c.name)],
+  });
+  return departments.map((dept) => ({
+    ...dept,
+    courses: courses.filter((c) => c.department === dept.name),
+  }));
+}
+
 export async function getShsStrands() {
   return db.query.shsStrands.findMany({
     where: (s, { eq }) => eq(s.isActive, true),
     orderBy: (s, { asc }) => [asc(s.name)],
   });
+}
+
+// ── Announcements ──
+
+export async function getAnnouncements() {
+  return db.query.announcements.findMany({
+    orderBy: (a, { desc }) => [desc(a.createdAt)],
+  });
+}
+
+export async function getActiveAnnouncements() {
+  return db.query.announcements.findMany({
+    where: (a, { eq }) => eq(a.isActive, true),
+    orderBy: (a, { desc }) => [desc(a.createdAt)],
+  });
+}
+
+export async function createAnnouncement(formData: FormData) {
+  await requireAdmin();
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+  const category = formData.get("category") as string;
+  const image = formData.get("image") as string;
+  if (!title || !content) throw new Error("Title and content are required");
+  await db.insert(announcements).values({
+    title,
+    content,
+    category: category || "General",
+    image: image || null,
+  });
+  revalidatePath("/portal/admin/admission/announcements");
+}
+
+export async function toggleAnnouncement(id: number) {
+  await requireAdmin();
+  const item = await db.select().from(announcements).where(eq(announcements.id, id)).limit(1);
+  if (!item[0]) throw new Error("Not found");
+  await db.update(announcements).set({ isActive: !item[0].isActive }).where(eq(announcements.id, id));
+  revalidatePath("/portal/admin/admission/announcements");
+}
+
+export async function deleteAnnouncement(id: number) {
+  await requireAdmin();
+  await db.delete(announcements).where(eq(announcements.id, id));
+  revalidatePath("/portal/admin/admission/announcements");
 }
 
 // ── Admission Schedules ──

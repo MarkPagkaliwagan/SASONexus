@@ -336,18 +336,43 @@ export default function PreAdmissionPage() {
     return (
       <>
         <Navbar />
-        <main className="min-h-screen bg-gray-50 py-8 px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Submitted!</h2>
-              <p className="text-gray-600">Your pre-admission application has been received. Please wait for further instructions from the admission office.</p>
+      <main className="min-h-screen bg-gray-50 pt-16 md:pt-20">
+          <section className="relative bg-[#007848] shadow-lg overflow-hidden">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: "radial-gradient(circle at 30% 70%, #fff 1.5px, transparent 1.5px), radial-gradient(circle at 70% 30%, #fff 1.5px, transparent 1.5px)",
+                backgroundSize: "50px 50px",
+              }} />
             </div>
-          </div>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-5 md:py-8">
+              <div className="flex flex-col md:flex-row items-center md:items-center gap-3 md:gap-6 pt-3 md:pt-0">
+                <div className="flex items-center gap-3 md:gap-4 shrink-0">
+                  <img src="/SPCLOGO.png" alt="SPC" className="w-8 h-8 md:w-14 md:h-14 object-contain" />
+                  <img src="/SASOLOGO.png" alt="SASO" className="w-7 h-7 md:w-12 md:h-12 object-contain" />
+                </div>
+                <div className="text-center md:text-left">
+                  <p className="text-green-200 text-[10px] md:text-xs font-semibold uppercase tracking-[0.2em]">San Pablo Colleges</p>
+                  <h1 className="text-lg md:text-3xl font-extrabold text-white mt-1">Application For Pre-Admission</h1>
+                  <p className="text-green-300/80 text-[10px] md:text-xs mt-2 leading-relaxed">
+                    Hermanos Belen St., San Pablo City<br className="md:hidden" /> | (049) 562-4688 | www.sanpablocolleges.edu.ph
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section className="py-12 md:py-16 px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-12 text-center">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Submitted!</h2>
+                <p className="text-gray-600">Your pre-admission application has been received. Please wait for further instructions from the admission office.</p>
+              </div>
+            </div>
+          </section>
         </main>
         <Footer />
       </>
@@ -357,12 +382,32 @@ export default function PreAdmissionPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">Pre-Admission Application</h1>
-            <p className="text-gray-600 text-sm">Please fill all required fields. Write N/A for items that do not apply.</p>
-          </div>
+      <main className="min-h-screen bg-gray-50 pt-16 md:pt-20">
+          <section className="relative bg-[#007848] shadow-lg overflow-hidden">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: "radial-gradient(circle at 30% 70%, #fff 1.5px, transparent 1.5px), radial-gradient(circle at 70% 30%, #fff 1.5px, transparent 1.5px)",
+                backgroundSize: "50px 50px",
+              }} />
+            </div>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-5 md:py-8">
+              <div className="flex flex-col md:flex-row items-center md:items-center gap-3 md:gap-6 pt-3 md:pt-0">
+                <div className="flex items-center gap-3 md:gap-4 shrink-0">
+                  <img src="/SPCLOGO.png" alt="SPC" className="w-8 h-8 md:w-14 md:h-14 object-contain" />
+                  <img src="/SASOLOGO.png" alt="SASO" className="w-7 h-7 md:w-12 md:h-12 object-contain" />
+                </div>
+                <div className="text-center md:text-left">
+                  <p className="text-green-200 text-[10px] md:text-xs font-semibold uppercase tracking-[0.2em]">San Pablo Colleges</p>
+                  <h1 className="text-lg md:text-3xl font-extrabold text-white mt-1">Application For Pre-Admission</h1>
+                  <p className="text-green-300/80 text-[10px] md:text-xs mt-2 leading-relaxed">
+                    Hermanos Belen St., San Pablo City<br className="md:hidden" /> | (049) 562-4688 | www.sanpablocolleges.edu.ph
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        <section className="py-12 md:py-16 px-4">
+          <div className="max-w-4xl mx-auto">
 
           {/* Progress Bar */}
           <div className="mb-10">
@@ -1008,6 +1053,7 @@ export default function PreAdmissionPage() {
             </div>
           </form>
         </div>
+        </section>
       </main>
       <Footer />
     </>

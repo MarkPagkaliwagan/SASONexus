@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SignOutIconButton } from "@/components/SignOutButton";
-import { FiGrid, FiUsers, FiBookOpen, FiFileText, FiMenu, FiX, FiChevronRight } from "react-icons/fi";
+import { FiGrid, FiUsers, FiBookOpen, FiFileText, FiVolume2, FiMenu, FiX, FiChevronRight } from "react-icons/fi";
 
 const navItems = [
   { href: "/portal/admin", label: "Dashboard", icon: FiGrid },
   { href: "/portal/admin/staff", label: "Staff Management", icon: FiUsers },
+  { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2 },
   { href: "/portal/admin/admission/pre-admissions", label: "Application", icon: FiFileText },
   { href: "/portal/admin/admission", label: "Admission", icon: FiBookOpen },
 ];
@@ -29,7 +30,12 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
     if (pathname === href) return true;
     if (href === "/portal/admin") return false;
     if (pathname.startsWith(href + "/")) {
-      if (href === "/portal/admin/admission" && pathname.startsWith("/portal/admin/admission/pre-admissions")) return false;
+      if (href === "/portal/admin/admission") {
+        if (pathname === "/portal/admin/admission") return true;
+        if (pathname.startsWith("/portal/admin/admission/pre-admissions")) return false;
+        if (pathname.startsWith("/portal/admin/admission/announcements")) return false;
+        return true;
+      }
       return true;
     }
     return false;

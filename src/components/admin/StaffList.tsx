@@ -10,7 +10,7 @@ interface StaffMember {
   avatarUrl: string | null;
   isActive: boolean;
   createdAt: Date;
-  department: { name: string } | null;
+  unit: { name: string } | null;
   position: { name: string } | null;
 }
 
@@ -82,8 +82,8 @@ export function StaffList({ staff }: { staff: StaffMember[] }) {
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">{member.email}</p>
               <div className="flex gap-3 mt-1">
-                {member.department && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{member.department.name}</span>
+                {member.unit && (
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{member.unit.name}</span>
                 )}
                 {member.position && (
                   <span className="text-xs text-gray-400 dark:text-gray-500">&middot; {member.position.name}</span>

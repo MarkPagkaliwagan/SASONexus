@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { db } from "./index";
-import { departments, positions, staffAccounts } from "./schema";
+import { sasoUnits, positions, staffAccounts } from "./schema";
 import bcrypt from "bcryptjs";
 
 async function seed() {
@@ -8,9 +8,9 @@ async function seed() {
 
   await db.delete(staffAccounts);
   await db.delete(positions);
-  await db.delete(departments);
+  await db.delete(sasoUnits);
 
-  const deps = await db.insert(departments).values([
+  const units = await db.insert(sasoUnits).values([
     { name: "Guidance Office", slug: "guidance", description: "Provides guidance, counseling, and mental health support services." },
     { name: "Student Formation and Development Unit (SFDU)", slug: "sfdu", description: "Oversees student organizations, formation programs, and development activities." },
     { name: "School Clinic", slug: "clinic", description: "Manages student health concerns, medical records, and first aid services." },
@@ -18,27 +18,27 @@ async function seed() {
     { name: "Sports Development Unit", slug: "sports", description: "Develops athletic programs, manages sports facilities, and oversees varsity teams." },
   ]).returning();
 
-  console.log("Departments created:", deps.length);
+  console.log("SASO Units created:", units.length);
 
   const posData = [
-    { name: "Guidance Director", departmentId: deps[0].id },
-    { name: "Guidance Counselor", departmentId: deps[0].id },
-    { name: "Psychometrician", departmentId: deps[0].id },
-    { name: "Guidance Staff", departmentId: deps[0].id },
-    { name: "Director of SFDU", departmentId: deps[1].id },
-    { name: "Student Formation Coordinator", departmentId: deps[1].id },
-    { name: "Organization Adviser", departmentId: deps[1].id },
-    { name: "SFDU Staff", departmentId: deps[1].id },
-    { name: "School Nurse", departmentId: deps[2].id },
-    { name: "Clinic Assistant", departmentId: deps[2].id },
-    { name: "Dentist", departmentId: deps[2].id },
-    { name: "Campus Minister", departmentId: deps[3].id },
-    { name: "Ministry Coordinator", departmentId: deps[3].id },
-    { name: "Ministry Staff", departmentId: deps[3].id },
-    { name: "Sports Director", departmentId: deps[4].id },
-    { name: "Coach", departmentId: deps[4].id },
-    { name: "Sports Coordinator", departmentId: deps[4].id },
-    { name: "Sports Staff", departmentId: deps[4].id },
+    { name: "Guidance Director", unitId: units[0].id },
+    { name: "Guidance Counselor", unitId: units[0].id },
+    { name: "Psychometrician", unitId: units[0].id },
+    { name: "Guidance Staff", unitId: units[0].id },
+    { name: "Director of SFDU", unitId: units[1].id },
+    { name: "Student Formation Coordinator", unitId: units[1].id },
+    { name: "Organization Adviser", unitId: units[1].id },
+    { name: "SFDU Staff", unitId: units[1].id },
+    { name: "School Nurse", unitId: units[2].id },
+    { name: "Clinic Assistant", unitId: units[2].id },
+    { name: "Dentist", unitId: units[2].id },
+    { name: "Campus Minister", unitId: units[3].id },
+    { name: "Ministry Coordinator", unitId: units[3].id },
+    { name: "Ministry Staff", unitId: units[3].id },
+    { name: "Sports Director", unitId: units[4].id },
+    { name: "Coach", unitId: units[4].id },
+    { name: "Sports Coordinator", unitId: units[4].id },
+    { name: "Sports Staff", unitId: units[4].id },
   ];
 
   const pos = await db.insert(positions).values(posData).returning();

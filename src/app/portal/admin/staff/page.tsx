@@ -1,12 +1,12 @@
 import { db } from "@/db";
-import { staffAccounts, departments } from "@/db/schema";
+import { staffAccounts, sasoUnits } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { StaffForm } from "@/components/admin/StaffForm";
 import { StaffList } from "@/components/admin/StaffList";
 import { FiChevronRight } from "react-icons/fi";
 
 export default async function StaffManagementPage() {
-  const depts = await db.query.departments.findMany({
+  const units = await db.query.sasoUnits.findMany({
     with: {
       positions: true,
     },
@@ -15,7 +15,7 @@ export default async function StaffManagementPage() {
   const allStaff = await db.query.staffAccounts.findMany({
     where: eq(staffAccounts.role, "staff"),
     with: {
-      department: true,
+      unit: true,
       position: true,
     },
     orderBy: (staff, { desc }) => [desc(staff.createdAt)],
@@ -32,13 +32,13 @@ export default async function StaffManagementPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Staff Management</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Create and manage staff accounts across all departments.</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Create and manage staff accounts across all SASO units.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <StaffForm departments={depts} />
+          <StaffForm units={units} />
         </div>
         <div className="lg:col-span-2">
           <StaffList staff={allStaff} />

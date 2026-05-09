@@ -4,22 +4,22 @@ import { useState, useRef } from "react";
 import { createStaffAccount } from "@/lib/actions";
 import { FiCamera, FiLoader } from "react-icons/fi";
 
-interface Department {
+interface SasoUnit {
   id: number;
   name: string;
   slug: string;
   positions: { id: number; name: string }[];
 }
 
-export function StaffForm({ departments }: { departments: Department[] }) {
-  const [selectedDept, setSelectedDept] = useState("");
+export function StaffForm({ units }: { units: SasoUnit[] }) {
+  const [selectedUnit, setSelectedUnit] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const selectedDepartment = departments.find(
-    (d) => d.id === parseInt(selectedDept)
+  const selectedSasoUnit = units.find(
+    (u) => u.id === parseInt(selectedUnit)
   );
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -39,7 +39,7 @@ export function StaffForm({ departments }: { departments: Department[] }) {
       await createStaffAccount(formData);
       setMessage({ type: "success", text: "Staff account created successfully!" });
       (document.getElementById("staff-form") as HTMLFormElement)?.reset();
-      setSelectedDept("");
+      setSelectedUnit("");
       setPreview(null);
     } catch (err) {
       setMessage({
@@ -146,22 +146,22 @@ export function StaffForm({ departments }: { departments: Department[] }) {
         </div>
 
         <div>
-          <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Department
+          <label htmlFor="unitId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            SASO Unit
           </label>
           <select
-            id="departmentId"
-            name="departmentId"
+            id="unitId"
+            name="unitId"
             required
             disabled={loading}
-            value={selectedDept}
-            onChange={(e) => setSelectedDept(e.target.value)}
+            value={selectedUnit}
+            onChange={(e) => setSelectedUnit(e.target.value)}
             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">Select department...</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
+            <option value="">Select SASO unit...</option>
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name}
               </option>
             ))}
           </select>
@@ -175,13 +175,13 @@ export function StaffForm({ departments }: { departments: Department[] }) {
             id="positionId"
             name="positionId"
             required
-            disabled={loading || !selectedDepartment}
+            disabled={loading || !selectedSasoUnit}
             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">
-              {selectedDepartment ? "Select position..." : "Select department first"}
+              {selectedSasoUnit ? "Select position..." : "Select SASO unit first"}
             </option>
-            {selectedDepartment?.positions.map((pos) => (
+            {selectedSasoUnit?.positions.map((pos) => (
               <option key={pos.id} value={pos.id}>
                 {pos.name}
               </option>

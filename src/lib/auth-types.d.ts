@@ -4,9 +4,9 @@ declare module "next-auth" {
   interface User {
     avatarUrl?: string | null;
     role?: string;
-    departmentId?: number | null;
-    departmentName?: string | null;
-    departmentSlug?: string | null;
+    unitId?: number | null;
+    unitName?: string | null;
+    unitSlug?: string | null;
     positionId?: number | null;
     positionName?: string | null;
   }
@@ -19,9 +19,9 @@ declare module "next-auth" {
       image?: string | null;
       avatarUrl?: string | null;
       role?: string;
-      departmentId?: number | null;
-      departmentName?: string | null;
-      departmentSlug?: string | null;
+      unitId?: number | null;
+      unitName?: string | null;
+      unitSlug?: string | null;
       positionId?: number | null;
       positionName?: string | null;
     };
@@ -33,9 +33,9 @@ declare module "next-auth/jwt" {
     id?: string;
     avatarUrl?: string | null;
     role?: string;
-    departmentId?: number | null;
-    departmentName?: string | null;
-    departmentSlug?: string | null;
+    unitId?: number | null;
+    unitName?: string | null;
+    unitSlug?: string | null;
     positionId?: number | null;
     positionName?: string | null;
   }

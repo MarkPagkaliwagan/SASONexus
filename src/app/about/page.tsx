@@ -5,8 +5,24 @@ export default function AboutPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-white">
-        <section className="py-16 px-4 max-w-7xl mx-auto pt-28">
+      <main className="min-h-screen bg-white pt-16 md:pt-20">
+        <section className="relative bg-[#007848] overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: "radial-gradient(circle at 20% 80%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }} />
+          </div>
+          <div className="relative max-w-6xl mx-auto px-6 pt-4 pb-16 md:py-20 text-center">
+            <p className="text-green-300 text-sm font-semibold uppercase tracking-widest mb-3">San Pablo Colleges</p>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-5">About Our Office</h1>
+            <p className="text-green-100 text-lg max-w-2xl mx-auto">
+              The Student Affairs and Services Office — dedicated to your holistic development and success.
+            </p>
+          </div>
+        </section>
+
+        <section className="py-16 px-4 max-w-7xl mx-auto">
           <div className="max-w-4xl mx-auto">
             <div className="mb-16">
               <h2 className="text-3xl font-bold text-gray-800 mb-6">Office Overview</h2>
@@ -93,7 +109,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-1">Office Hours</h4>
-                   <p className="text-gray-600">Monday - Saturday: 8:00 AM - 5:00 PM</p>
+                  <p className="text-gray-600">Monday - Saturday: 8:00 AM - 5:00 PM</p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-1">Email</h4>
