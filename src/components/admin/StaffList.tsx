@@ -55,7 +55,7 @@ export function StaffList({ staff }: { staff: StaffMember[] }) {
       </div>
       <div className="divide-y divide-gray-100 dark:divide-gray-800">
         {staff.map((member) => (
-          <div key={member.id} className="px-6 py-4 flex items-center gap-4">
+          <div key={member.id} className="px-6 py-4 flex items-center gap-4 flex-wrap">
             <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-[#007848]/10 dark:bg-[#007848]/20 flex items-center justify-center">
               {member.avatarUrl ? (
                 <img src={member.avatarUrl} alt="" className="w-full h-full object-cover" />

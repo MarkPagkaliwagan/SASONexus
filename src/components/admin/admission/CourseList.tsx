@@ -46,7 +46,7 @@ export function CourseList({ courses }: { courses: Course[] }) {
       </div>
       <div className="divide-y divide-gray-100 dark:divide-gray-800">
         {courses.map((course) => (
-          <div key={course.id} className="px-6 py-4 flex items-center gap-4">
+          <div key={course.id} className="px-6 py-4 flex items-center gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium text-gray-900 dark:text-white">{course.name}</span>
               {course.code && <span className="ml-2 text-xs text-gray-400">({course.code})</span>}

@@ -46,7 +46,7 @@ export function StrandList({ strands }: { strands: Strand[] }) {
       </div>
       <div className="divide-y divide-gray-100 dark:divide-gray-800">
         {strands.map((strand) => (
-          <div key={strand.id} className="px-6 py-4 flex items-center gap-4">
+          <div key={strand.id} className="px-6 py-4 flex items-center gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium text-gray-900 dark:text-white">{strand.name}</span>
               {strand.code && <span className="ml-2 text-xs text-gray-400">{strand.code}</span>}

@@ -34,7 +34,7 @@ export function StudentsTable({ items, academicYearOptions = [] }: { items: Stud
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Students ({filtered.length})</h2>
           <select
             value={academicYear}

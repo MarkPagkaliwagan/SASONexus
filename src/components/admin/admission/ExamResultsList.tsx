@@ -222,7 +222,7 @@ export function ExamResultsList({ students, preAdmissionMap, academicYearOptions
           {level}
           <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({items.length})</span>
         </h3>
-        <div>
+        <div className="overflow-x-auto">
           <table className="text-xs">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -265,13 +265,13 @@ export function ExamResultsList({ students, preAdmissionMap, academicYearOptions
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
       <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Student Exam Results ({filtered.length})</h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
               <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848] w-48" />
+                className="pl-9 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848] w-40 sm:w-48" />
             </div>
             <select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)}
               className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#007848]">

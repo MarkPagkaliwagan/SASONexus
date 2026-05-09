@@ -66,7 +66,7 @@ export function AcademicYearList({ years }: { years: AcademicYear[] }) {
       )}
       {years.map((year) => (
         <div key={year.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <div className="px-6 py-4 flex items-center gap-4">
+          <div className="px-6 py-4 flex items-center gap-4 flex-wrap">
             <button onClick={() => setOpenId(openId === year.id ? null : year.id)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               {openId === year.id ? <FiChevronDown /> : <FiChevronRight />}
             </button>

@@ -65,7 +65,7 @@ export function ScheduleList({ schedules }: { schedules: Schedule[] }) {
         {schedules.map((s) => {
           const isFull = s.availableSlots <= 0;
           return (
-            <div key={s.id} className="px-6 py-4 flex items-center gap-4">
+            <div key={s.id} className="px-6 py-4 flex items-center gap-4 flex-wrap">
               <div className="flex-1 min-w-0">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[s.level] || "bg-gray-100 text-gray-700"}`}>
                   {s.level}
