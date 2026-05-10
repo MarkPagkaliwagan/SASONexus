@@ -52,7 +52,7 @@ export default function LoginPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white px-4 py-10 flex items-center justify-center">
+      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white px-4 py-10 flex items-center justify-center pt-16 md:pt-20">
         <div className="w-full max-w-5xl">
           <div className="grid overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.08)] md:grid-cols-2">
             {/* Left Panel */}

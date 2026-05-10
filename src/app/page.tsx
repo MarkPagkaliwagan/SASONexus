@@ -91,9 +91,11 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="bg-white">
+      <main className="bg-white sm:bg-none">
+        <div className="fixed inset-0 sm:hidden" style={{ backgroundImage: "url('/ms-bg.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
         {/* ════════════════ HERO ════════════════ */}
-        <section className="relative overflow-hidden min-h-screen flex items-center bg-fixed max-sm:bg-scroll" style={{ backgroundImage: "url('/hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
+        <section className="relative overflow-hidden min-h-screen flex items-center">
+          <div className="absolute inset-0 hidden sm:block" style={{ backgroundImage: "url('/hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/20" />
 
@@ -212,7 +214,8 @@ export default function Home() {
         </section>
 
         {/* ════════════════ ABOUT ════════════════ */}
-        <section className="relative overflow-hidden py-16 md:py-20 px-4 bg-fixed" style={{ backgroundImage: "url('/hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
+        <section className="relative overflow-hidden py-16 md:py-20 px-4">
+          <div className="absolute inset-0 hidden sm:block" style={{ backgroundImage: "url('/hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/70 to-black/80" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,120,72,0.15)_0%,_transparent_60%)]" />
 
@@ -387,7 +390,8 @@ export default function Home() {
         </section>
 
         {/* ════════════════ CTA ════════════════ */}
-        <section className="relative overflow-hidden py-16 md:py-24 px-4 bg-scroll md:bg-fixed" style={{ backgroundImage: "url('/hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
+        <section className="relative overflow-hidden py-16 md:py-24 px-4">
+          <div className="absolute inset-0 hidden sm:block" style={{ backgroundImage: "url('/hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }} />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,120,72,0.1)_0%,_transparent_60%)]" />
 
