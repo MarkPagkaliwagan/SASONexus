@@ -6,7 +6,7 @@ import { db } from "@/db";
 import {
   staffAccounts, preAdmissions, students,
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
-  announcements
+  announcements, interviewSchedules
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -537,4 +537,36 @@ export async function reschedulePreAdmission(id: number, scheduleId: string) {
   }).where(eq(preAdmissions.id, id));
 
   revalidatePath("/portal/admin/admission/pre-admissions");
+}
+
+// ── Interview Schedules ──
+
+export async function createInterviewSchedule(formData: FormData) {
+  await requireAdmin();
+  const type = formData.get("type") as string;
+  const department = formData.get("department") as string;
+  const gradeLevel = formData.get("gradeLevel") as string;
+  const date = formData.get("date") as string;
+  const timeStart = formData.get("timeStart") as string;
+  const timeEnd = formData.get("timeEnd") as string;
+  const slots = parseInt(formData.get("slots") as string) || 1;
+  if (!department || !gradeLevel || !date || !timeStart || !timeEnd) throw new Error("All fields are required");
+  const label = type === "exit" ? "Exit Interview" : "Initial Interview";
+  const title = `${label} - ${department} - ${gradeLevel}`;
+  await db.insert(interviewSchedules).values({ title, type: type || "initial", date, timeStart, timeEnd, slots, booked: 0 });
+  revalidatePath("/portal/admin/interview");
+}
+
+export async function toggleInterviewSchedule(id: number) {
+  await requireAdmin();
+  const item = await db.select().from(interviewSchedules).where(eq(interviewSchedules.id, id)).limit(1);
+  if (!item[0]) throw new Error("Not found");
+  await db.update(interviewSchedules).set({ isActive: !item[0].isActive }).where(eq(interviewSchedules.id, id));
+  revalidatePath("/portal/admin/interview");
+}
+
+export async function deleteInterviewSchedule(id: number) {
+  await requireAdmin();
+  await db.delete(interviewSchedules).where(eq(interviewSchedules.id, id));
+  revalidatePath("/portal/admin/interview");
 }
