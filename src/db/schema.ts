@@ -246,3 +246,22 @@ export const interviewSchedules = pgTable("interview_schedules", {
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const interviewAppointments = pgTable("interview_appointments", {
+  id: serial("id").primaryKey(),
+  scheduleId: integer("schedule_id").notNull().references(() => interviewSchedules.id, { onDelete: "cascade" }),
+  interviewType: varchar("interview_type", { length: 50 }).notNull().default("initial"),
+  studentType: varchar("student_type", { length: 100 }),
+  academicLevel: varchar("academic_level", { length: 100 }),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  studentId: varchar("student_id", { length: 100 }),
+  email: varchar("email", { length: 255 }),
+  contact: varchar("contact", { length: 100 }),
+  gradeLevel: varchar("grade_level", { length: 100 }),
+  strand: varchar("strand", { length: 255 }),
+  section: varchar("section", { length: 255 }),
+  department: varchar("department", { length: 255 }),
+  course: varchar("course", { length: 255 }),
+  status: varchar("status", { length: 50 }).default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

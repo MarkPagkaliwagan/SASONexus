@@ -7,6 +7,7 @@ import {
   FaUserFriends, FaUsers, FaClinicMedical, FaChurch, FaRunning,
   FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock
 } from "react-icons/fa";
+import { submitInterviewAppointment } from "@/lib/actions";
 
 const units = [
   { name: "Guidance Office", icon: FaUserFriends },
@@ -38,6 +39,8 @@ export default function ServicesPage() {
   const [strands, setStrands] = useState<{ id: number; name: string }[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     if (showModal) {
@@ -72,6 +75,92 @@ export default function ServicesPage() {
     ? ["Type", "Level", "Details", "Schedule"]
     : ["Type"];
 
+  const ModalProgress = () => (
+    <div className="mb-6">
+      <div className="flex items-center justify-between px-1">
+        {stepLabels.map((label, i) => {
+          const n = i + 1;
+          const isCurrent = step === n;
+          const isDone = step > n;
+          return (
+            <div key={label} className="flex flex-col items-center">
+              <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848]/20 text-[#007848]" : "bg-gray-100 text-gray-400"}`}>
+                {isDone ? <FaCheck className="text-xs" /> : n}
+              </div>
+              <span className="text-[10px] md:text-xs mt-1 hidden md:block font-medium transition-colors">{label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="relative h-1.5 bg-gray-100 rounded-full mt-3 mx-1 overflow-hidden">
+        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
+      </div>
+    </div>
+  );
+
+  const SectionCard = ({ children }: { children: React.ReactNode }) => (
+    <div className="bg-gray-50/80 rounded-xl p-4 md:p-5 border border-gray-100">{children}</div>
+  );
+
+  const SelectionButton = ({ selected, onClick, icon, title, subtitle, color }: {
+    selected: boolean; onClick: () => void; icon: React.ReactNode; title: string; subtitle?: string; color?: string;
+  }) => (
+    <button onClick={onClick} className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all cursor-pointer group ${selected ? "border-[#007848] bg-[#007848]/5 shadow-sm" : "border-gray-200 hover:border-[#007848]/30 hover:bg-gray-50"}`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center transition-colors ${selected ? "bg-[#007848] text-white" : "bg-gray-100 text-gray-500 group-hover:bg-gray-200"}`}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-gray-800 text-sm md:text-base block truncate">{title}</span>
+          {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+        </div>
+        {selected && <FaCheckCircle className="text-[#007848] text-lg flex-shrink-0" />}
+      </div>
+    </button>
+  );
+
+  const FormInput = ({ label, ...props }: { label: string; [key: string]: any }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      {props.type === "select" ? (
+        <select {...props} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none bg-white transition">
+          {props.children}
+        </select>
+      ) : (
+        <input {...props} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none transition" />
+      )}
+    </div>
+  );
+
+  async function handleSubmitAppointment() {
+    if (!selectedSchedule) return;
+    setSubmitting(true);
+    setSubmitMessage(null);
+    try {
+      const fd = new FormData();
+      fd.set("scheduleId", String(selectedSchedule));
+      fd.set("interviewType", interviewType || "");
+      fd.set("studentType", studentType);
+      fd.set("academicLevel", academicLevel);
+      fd.set("fullName", fullName);
+      fd.set("studentId", studentId);
+      fd.set("email", email);
+      fd.set("contact", contact);
+      fd.set("gradeLevel", gradeLevel);
+      fd.set("strand", strand);
+      fd.set("section", section);
+      fd.set("department", department);
+      fd.set("course", course);
+      await submitInterviewAppointment(fd);
+      setSubmitMessage({ type: "success", text: "Interview scheduled successfully!" });
+      setTimeout(resetModal, 1500);
+    } catch (err) {
+      setSubmitMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to submit" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   const resetModal = () => {
     setShowModal(false);
     setStep(1);
@@ -89,6 +178,7 @@ export default function ServicesPage() {
     setCourse("");
     setSchedules([]);
     setSelectedSchedule(null);
+    setSubmitMessage(null);
   };
 
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
@@ -96,112 +186,91 @@ export default function ServicesPage() {
 
   const progressPercent = ((step - 1) / (totalSteps - 1)) * 100;
 
-  const ModalProgress = () => (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        {stepLabels.map((label, i) => (
-          <span key={label} className={`text-xs font-medium transition-colors ${step === i + 1 ? "text-[#007848]" : step > i + 1 ? "text-[#007848]/60" : "text-gray-400"}`}>
-            {label}
-          </span>
-        ))}
-      </div>
-      <div className="relative h-1.5 bg-gray-200 rounded-full overflow-hidden">
-        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
-      </div>
-    </div>
-  );
-
   const renderModal = () => {
     if (!showModal) return null;
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" onClick={resetModal}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between p-5 border-b border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800">Schedule for Interview</h3>
-            <button onClick={resetModal} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+      <div
+        className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+        onClick={resetModal}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out md:scale-100 md:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-5 md:px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#007848]/10 flex items-center justify-center">
+                <FaClock className="text-[#007848] text-sm" />
+              </div>
+              <h3 className="text-base md:text-lg font-bold text-gray-800">Schedule for Interview</h3>
+            </div>
+            <button
+              onClick={resetModal}
+              className="p-2 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+            >
               <FaTimes className="text-gray-400" />
             </button>
           </div>
-          <div className="p-5">
+
+          <div className="p-5 md:p-6">
             <ModalProgress />
 
             {step === 1 && (
-              <div>
-                <p className="text-sm text-gray-600 mb-4">Select the type of interview you need:</p>
+              <SectionCard>
+                <p className="text-sm text-gray-600 mb-4 font-medium">Select the type of interview you need:</p>
                 <div className="space-y-3">
-                  <button
+                  <SelectionButton
+                    selected={interviewType === "initial"}
                     onClick={() => { setInterviewType("initial"); setStudentType(""); }}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer group ${
-                      interviewType === "initial" ? "border-[#007848] bg-[#007848]/5" : "border-gray-200 hover:border-[#007848]/30"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                        <FaUserFriends className="text-blue-600" />
-                      </div>
-                      <div>
-                        <span className="font-semibold text-gray-800">Initial Interview</span>
-                        <p className="text-xs text-gray-500 mt-0.5">For freshmen and transferees</p>
-                      </div>
-                    </div>
-                  </button>
-                  <button
+                    icon={<FaUserFriends />}
+                    title="Initial Interview"
+                    subtitle="For freshmen and transferees"
+                    color="[#007848]"
+                  />
+                  <SelectionButton
+                    selected={interviewType === "exit"}
                     onClick={() => { setInterviewType("exit"); setStudentType(""); nextStep(); }}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer group ${
-                      interviewType === "exit" ? "border-[#007848] bg-[#007848]/5" : "border-gray-200 hover:border-[#007848]/30"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
-                        <FaStar className="text-orange-600" />
-                      </div>
-                      <div>
-                        <span className="font-semibold text-gray-800">Exit Interview</span>
-                        <p className="text-xs text-gray-500 mt-0.5">For graduating students (Gr6, Gr10, Gr12, College)</p>
-                      </div>
-                    </div>
-                  </button>
+                    icon={<FaStar />}
+                    title="Exit Interview"
+                    subtitle="For graduating students (Gr6, Gr10, Gr12, College)"
+                    color="[#007848]"
+                  />
                 </div>
 
                 {interviewType === "initial" && (
-                  <div className="mt-5 pt-5 border-t border-gray-100">
-                    <p className="text-sm text-gray-600 mb-3">Select your student type:</p>
-                    <div className="space-y-3">
+                  <div className="mt-5 pt-5 border-t border-gray-200">
+                    <p className="text-sm text-gray-600 mb-3 font-medium">Select your student type:</p>
+                    <div className="space-y-2">
                       {["Freshmen", "Transferee"].map((type) => (
-                        <button
+                        <SelectionButton
                           key={type}
+                          selected={studentType === type}
                           onClick={() => setStudentType(type)}
-                          className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer group ${
-                            studentType === type ? "border-[#007848] bg-[#007848]/5" : "border-gray-200 hover:border-[#007848]/30"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
-                              <FaUsers className="text-green-600" />
-                            </div>
-                            <span className="font-semibold text-gray-800">{type}</span>
-                          </div>
-                        </button>
+                          icon={<FaUsers />}
+                          title={type}
+                          color="[#007848]"
+                        />
                       ))}
                     </div>
                     <div className="flex justify-end pt-4">
                       <button
                         onClick={nextStep}
                         disabled={!studentType}
-                        className="px-5 py-2 bg-[#007848] text-white text-sm font-medium rounded-lg hover:bg-[#005f3a] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-6 py-2.5 bg-[#007848] text-white text-sm font-semibold rounded-xl hover:bg-[#005f3a] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
                       >
                         Next <FaArrowRight className="text-xs" />
                       </button>
                     </div>
                   </div>
                 )}
-              </div>
+              </SectionCard>
             )}
 
             {step === 2 && interviewType === "exit" && (
-              <div>
-                <p className="text-sm text-gray-600 mb-4">Select your current level:</p>
+              <SectionCard>
+                <p className="text-sm text-gray-600 mb-4 font-medium">Select your current level:</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { value: "GS", label: "Grade School", sub: "Gr6" },
@@ -212,198 +281,158 @@ export default function ServicesPage() {
                     <button
                       key={value}
                       onClick={() => { setStudentType(value); nextStep(); }}
-                      className="text-center p-4 rounded-xl border-2 border-gray-200 hover:border-[#007848]/30 transition-all cursor-pointer group"
+                      className={`text-center p-4 md:p-5 rounded-xl border-2 transition-all cursor-pointer group hover:shadow-sm ${
+                        studentType === value
+                          ? "border-[#007848] bg-[#007848]/5 shadow-sm"
+                          : "border-gray-200 hover:border-[#007848]/30"
+                      }`}
                     >
-                      <span className="font-semibold text-gray-800 block">{label}</span>
-                      <span className="text-xs text-gray-500">{sub}</span>
+                      <span className={`font-bold block text-sm md:text-base ${studentType === value ? "text-[#007848]" : "text-gray-800"}`}>
+                        {label}
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1 block">{sub}</span>
                     </button>
                   ))}
                 </div>
-              </div>
+              </SectionCard>
             )}
 
             {((step === 2 && interviewType === "initial") || (step === 3 && interviewType === "exit")) && (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 mb-4">Please provide your personal details:</p>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input
+              <SectionCard>
+                <p className="text-sm text-gray-600 mb-4 font-medium">Please provide your personal details:</p>
+                <div className="space-y-3 md:space-y-4">
+                  <FormInput
+                    label="Full Name"
                     type="text"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(e: any) => setFullName(e.target.value)}
                     placeholder="Enter your full name"
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-                  <input
+                  <FormInput
+                    label="Student ID"
                     type="text"
                     value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
+                    onChange={(e: any) => setStudentId(e.target.value)}
                     placeholder="Enter your student ID"
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormInput
+                      label="Email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e: any) => setEmail(e.target.value)}
                       placeholder="your@email.com"
-                      className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact No.</label>
-                    <input
+                    <FormInput
+                      label="Contact No."
                       type="text"
                       value={contact}
-                      onChange={(e) => setContact(e.target.value)}
+                      onChange={(e: any) => setContact(e.target.value)}
                       placeholder="09XXXXXXXXX"
-                      className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
                     />
                   </div>
-                </div>
 
-                <hr className="border-gray-100" />
-
-                {(studentType === "GS" || studentType === "JHS" || academicLevel === "GS" || academicLevel === "JHS") && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-                    <input
+                  {(studentType === "GS" || studentType === "JHS" || academicLevel === "GS" || academicLevel === "JHS") && (
+                    <FormInput
+                      label="Section"
                       type="text"
                       value={section}
-                      onChange={(e) => setSection(e.target.value)}
+                      onChange={(e: any) => setSection(e.target.value)}
                       placeholder="Enter your section"
-                      className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
                     />
-                  </div>
-                )}
+                  )}
 
-                {(studentType === "SHS" || academicLevel === "SHS") && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
-                        <select
-                          value={gradeLevel}
-                          onChange={(e) => setGradeLevel(e.target.value)}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
-                        >
+                  {(studentType === "SHS" || academicLevel === "SHS") && (
+                    <div className="space-y-3 pt-2 border-t border-gray-200">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <FormInput label="Grade Level" type="select" value={gradeLevel} onChange={(e: any) => setGradeLevel(e.target.value)}>
                           <option value="">Select</option>
                           <option value="Grade 11">Grade 11</option>
                           <option value="Grade 12">Grade 12</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Strand</label>
-                        <select
-                          value={strand}
-                          onChange={(e) => setStrand(e.target.value)}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
-                        >
+                        </FormInput>
+                        <FormInput label="Strand" type="select" value={strand} onChange={(e: any) => setStrand(e.target.value)}>
                           <option value="">Select</option>
                           {strands.map((s) => (
                             <option key={s.id} value={s.name}>{s.name}</option>
                           ))}
-                        </select>
+                        </FormInput>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-                      <input
+                      <FormInput
+                        label="Section"
                         type="text"
                         value={section}
-                        onChange={(e) => setSection(e.target.value)}
+                        onChange={(e: any) => setSection(e.target.value)}
                         placeholder="Enter your section"
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
                       />
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {(studentType === "college" || academicLevel === "college") && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                        <select
-                          value={department}
-                          onChange={(e) => { setDepartment(e.target.value); setCourse(""); }}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
-                        >
-                          <option value="">Select department</option>
-                          {departments.map((d) => (
-                            <option key={d.id} value={d.name}>{d.name}</option>
-                          ))}
-                        </select>
+                  {(studentType === "college" || academicLevel === "college") && (
+                    <div className="space-y-3 pt-2 border-t border-gray-200">
+                      <FormInput label="Department" type="select" value={department} onChange={(e: any) => { setDepartment(e.target.value); setCourse(""); }}>
+                        <option value="">Select department</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.name}>{d.name}</option>
+                        ))}
+                      </FormInput>
+                      <FormInput label="Course" type="select" value={course} onChange={(e: any) => setCourse(e.target.value)} disabled={!department}>
+                        <option value="">Select course</option>
+                        {courses.map((c) => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </FormInput>
+                    </div>
+                  )}
+
+                  {studentType === "Freshmen" || studentType === "Transferee" ? (
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Current Level</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: "GS", label: "Grade School" },
+                          { value: "JHS", label: "Junior High" },
+                          { value: "SHS", label: "Senior High" },
+                          { value: "college", label: "College" },
+                        ].map(({ value, label }) => (
+                          <button
+                            key={value}
+                            onClick={() => setAcademicLevel(value)}
+                            className={`text-center p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                              academicLevel === value ? "border-[#007848] bg-[#007848]/5" : "border-gray-200 hover:border-[#007848]/30"
+                            }`}
+                          >
+                            <span className={`font-semibold text-sm ${academicLevel === value ? "text-[#007848]" : "text-gray-800"}`}>
+                              {label}
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
-                        <select
-                          value={course}
-                          onChange={(e) => setCourse(e.target.value)}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none"
-                          disabled={!department}
-                        >
-                          <option value="">Select course</option>
-                          {courses.map((c) => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                          ))}
-                        </select>
                     </div>
-                  </div>
-                )}
+                  ) : null}
 
-                {studentType === "Freshmen" || studentType === "Transferee" ? (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-gray-700 mb-1">Current Level</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { value: "GS", label: "Grade School" },
-                        { value: "JHS", label: "Junior High" },
-                        { value: "SHS", label: "Senior High" },
-                        { value: "college", label: "College" },
-                      ].map(({ value, label }) => (
-                        <button
-                          key={value}
-                          onClick={() => setAcademicLevel(value)}
-                          className={`text-center p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                            academicLevel === value ? "border-[#007848] bg-[#007848]/5" : "border-gray-200 hover:border-[#007848]/30"
-                          }`}
-                        >
-                          <span className="font-semibold text-gray-800 text-sm">{label}</span>
-                        </button>
-                      ))}
-                    </div>
+                  <div className="flex justify-between pt-3">
+                    <button onClick={prevStep} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-2">
+                      <FaArrowLeft className="text-xs" /> Back
+                    </button>
+                    <button onClick={nextStep} className="px-6 py-2.5 bg-[#007848] text-white text-sm font-semibold rounded-xl hover:bg-[#005f3a] transition-all cursor-pointer flex items-center gap-2 shadow-sm">
+                      Next <FaArrowRight className="text-xs" />
+                    </button>
                   </div>
-                ) : null}
-
-                <div className="flex justify-between pt-2">
-                  <button onClick={prevStep} className="px-5 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2">
-                    <FaArrowLeft className="text-xs" /> Back
-                  </button>
-                  <button onClick={nextStep} className="px-5 py-2 bg-[#007848] text-white text-sm font-medium rounded-lg hover:bg-[#005f3a] transition-colors cursor-pointer flex items-center gap-2">
-                    Next <FaArrowRight className="text-xs" />
-                  </button>
                 </div>
-              </div>
+              </SectionCard>
             )}
 
             {((step === 3 && interviewType === "initial") || (step === 4 && interviewType === "exit")) && (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 mb-4">Select your preferred schedule:</p>
+              <SectionCard>
+                <p className="text-sm text-gray-600 mb-4 font-medium">Select your preferred schedule:</p>
                 {schedules.length === 0 ? (
-                  <div className="bg-gray-50 rounded-xl p-8 text-center border-2 border-dashed border-gray-200">
+                  <div className="bg-white rounded-xl p-8 text-center border-2 border-dashed border-gray-200">
                     <FaClock className="mx-auto text-3xl text-gray-300 mb-3" />
                     <p className="text-gray-500 text-sm font-medium">No schedules available</p>
                     <p className="text-xs text-gray-400 mt-1">Schedules will be available once posted by the admin.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                     {schedules.map((s) => {
                       const available = s.slots - s.booked;
                       return (
@@ -412,48 +441,69 @@ export default function ServicesPage() {
                           onClick={() => setSelectedSchedule(s.id)}
                           className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${
                             selectedSchedule === s.id
-                              ? "border-[#007848] bg-[#007848]/5"
-                              : "border-gray-200 hover:border-[#007848]/30"
+                              ? "border-[#007848] bg-[#007848]/5 shadow-sm"
+                              : "border-gray-200 hover:border-[#007848]/30 hover:bg-gray-50"
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="font-semibold text-gray-800 text-sm">{s.title}</span>
-                              <div className="flex gap-3 mt-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <span className={`font-semibold text-sm block truncate ${selectedSchedule === s.id ? "text-[#007848]" : "text-gray-800"}`}>
+                                {s.title}
+                              </span>
+                              <div className="flex flex-wrap gap-2 mt-1">
                                 <span className="text-xs text-gray-500">{s.date}</span>
+                                <span className="text-xs text-gray-400">•</span>
                                 <span className="text-xs text-gray-500">{s.timeStart} - {s.timeEnd}</span>
                               </div>
                             </div>
-                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                              available <= 3 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
-                            }`}>
-                              {available} left
-                            </span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                                available <= 3 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
+                              }`}>
+                                {available} left
+                              </span>
+                              {selectedSchedule === s.id && <FaCheckCircle className="text-[#007848] text-lg" />}
+                            </div>
                           </div>
                         </button>
                       );
                     })}
                   </div>
                 )}
-                <div className="flex justify-between pt-2">
-                  <button onClick={prevStep} className="px-5 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2">
+                {submitMessage && (
+                  <div className={`mt-4 px-4 py-3 rounded-xl text-sm font-medium ${
+                    submitMessage.type === "success"
+                      ? "bg-green-50 border border-green-200 text-green-700"
+                      : "bg-red-50 border border-red-200 text-red-600"
+                  }`}>
+                    {submitMessage.text}
+                  </div>
+                )}
+                <div className="flex justify-between pt-4">
+                  <button onClick={prevStep} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-2">
                     <FaArrowLeft className="text-xs" /> Back
                   </button>
                   <button
-                    disabled={!selectedSchedule}
-                    className={`px-5 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors ${
-                      selectedSchedule
+                    disabled={!selectedSchedule || submitting}
+                    onClick={handleSubmitAppointment}
+                    className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
+                      selectedSchedule && !submitting
                         ? "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
                         : "bg-gray-300 text-white cursor-not-allowed"
                     }`}
                   >
-                    Submit
+                    {submitting ? (
+                      <><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Submitting...</>
+                    ) : (
+                      <><FaCheckCircle className="text-sm" /> Submit</>
+                    )}
                   </button>
                 </div>
-              </div>
+              </SectionCard>
             )}
           </div>
         </div>
+
       </div>
     );
   };
@@ -481,28 +531,28 @@ export default function ServicesPage() {
               <div className="flex">
                 <div className="w-2 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
                 <div className="p-6 md:p-8 flex-1">
-                   <div className="flex items-start gap-3 mb-4">
-                    <div className="p-3 bg-[#007848]/10 rounded-xl">
-                      <FaUserFriends className="text-xl text-[#007848]" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-800">Guidance and Career Services Unit</h3>
-                      <p className="text-xs text-gray-500 font-medium tracking-wider">GCSU</p>
-                    </div>
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setShowModal(true); }, 600); }}
-                        disabled={loading}
-                        className="px-4 py-1.5 bg-[#007848] text-white text-xs font-medium rounded-md hover:bg-[#005f3a] transition-colors cursor-pointer whitespace-nowrap border border-[#007848] disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-1.5"
-                      >
-                        {loading ? (
-                          <><svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Loading...</>
-                        ) : (
-                          <><FaClock className="text-[10px]" /> Schedule for Interview</>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                    <div className="flex flex-wrap items-start gap-3 mb-4">
+                     <div className="p-3 bg-[#007848]/10 rounded-xl">
+                       <FaUserFriends className="text-xl text-[#007848]" />
+                     </div>
+                     <div className="flex-1 min-w-[200px]">
+                       <h3 className="text-xl font-bold text-gray-800">Guidance and Career Services Unit</h3>
+                       <p className="text-xs text-gray-500 font-medium tracking-wider">GCSU</p>
+                     </div>
+                     <div className="flex flex-col gap-2 w-full sm:w-auto">
+                       <button
+                         onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setShowModal(true); }, 600); }}
+                         disabled={loading}
+                         className="px-4 py-1.5 bg-[#007848] text-white text-xs font-medium rounded-md hover:bg-[#005f3a] transition-colors cursor-pointer whitespace-nowrap border border-[#007848] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                       >
+                         {loading ? (
+                           <><svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Loading...</>
+                         ) : (
+                           <><FaClock className="text-[10px]" /> Schedule for Interview</>
+                         )}
+                       </button>
+                     </div>
+                   </div>
                   <p className="text-gray-600 leading-relaxed mb-4 text-sm">
                     Facilitates the process of acquiring the self-actualization of the student in his/her pursuit of becoming a fully functioning individual blessed with intellectual, emotional, spiritual, and social strengths.
                   </p>
