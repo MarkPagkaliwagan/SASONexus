@@ -233,3 +233,16 @@ export const students = pgTable("students", {
   status: varchar("status", { length: 50 }).default("took-exam").notNull(),
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
 });
+
+export const interviewSchedules = pgTable("interview_schedules", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull().default("initial"),
+  date: varchar("date", { length: 50 }).notNull(),
+  timeStart: varchar("time_start", { length: 50 }).notNull(),
+  timeEnd: varchar("time_end", { length: 50 }).notNull(),
+  slots: integer("slots").notNull().default(1),
+  booked: integer("booked").notNull().default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

@@ -85,6 +85,13 @@
       "when": 1778349500000,
       "tag": "0011_add_announcements",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778482199000,
+      "tag": "0012_add_interview_schedules",
+      "breakpoints": true
     }
   ]
 }
