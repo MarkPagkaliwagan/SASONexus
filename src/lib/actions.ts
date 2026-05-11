@@ -6,9 +6,9 @@ import { db } from "@/db";
 import {
   staffAccounts, preAdmissions, students,
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
-  announcements, interviewSchedules
+  announcements, interviewSchedules, interviewAppointments
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
@@ -568,5 +568,47 @@ export async function toggleInterviewSchedule(id: number) {
 export async function deleteInterviewSchedule(id: number) {
   await requireAdmin();
   await db.delete(interviewSchedules).where(eq(interviewSchedules.id, id));
+  revalidatePath("/portal/admin/interview");
+}
+
+export async function submitInterviewAppointment(formData: FormData) {
+  const scheduleId = parseInt(formData.get("scheduleId") as string);
+  const interviewType = formData.get("interviewType") as string;
+  const studentType = formData.get("studentType") as string;
+  const academicLevel = formData.get("academicLevel") as string;
+  const fullName = formData.get("fullName") as string;
+  const studentId = formData.get("studentId") as string;
+  const email = formData.get("email") as string;
+  const contact = formData.get("contact") as string;
+  const gradeLevel = formData.get("gradeLevel") as string;
+  const strand = formData.get("strand") as string;
+  const section = formData.get("section") as string;
+  const department = formData.get("department") as string;
+  const course = formData.get("course") as string;
+
+  if (!scheduleId || !fullName) throw new Error("Schedule and full name are required");
+
+  await db.insert(interviewAppointments).values({
+    scheduleId, interviewType, studentType, academicLevel,
+    fullName, studentId, email, contact, gradeLevel, strand, section,
+    department, course, status: "pending",
+  });
+
+  await db.update(interviewSchedules)
+    .set({ booked: sql`${interviewSchedules.booked} + 1` })
+    .where(eq(interviewSchedules.id, scheduleId));
+
+  revalidatePath("/services");
+}
+
+export async function deleteInterviewAppointment(id: number) {
+  await db.delete(interviewAppointments).where(eq(interviewAppointments.id, id));
+  revalidatePath("/portal/admin/interview");
+}
+
+export async function updateInterviewAppointmentStatus(id: number, status: string) {
+  await db.update(interviewAppointments)
+    .set({ status })
+    .where(eq(interviewAppointments.id, id));
   revalidatePath("/portal/admin/interview");
 }
