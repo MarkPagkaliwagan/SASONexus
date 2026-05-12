@@ -19,45 +19,74 @@ const units = [
 ];
 
 const ModalProgress = ({ step, stepLabels, progressPercent }: { step: number; stepLabels: string[]; progressPercent: number }) => (
-  <div className="mb-6">
-    <div className="flex items-center justify-between px-1">
+  <>
+    <div className="hidden md:flex flex-col gap-0">
       {stepLabels.map((label, i) => {
         const n = i + 1;
         const isCurrent = step === n;
         const isDone = step > n;
         return (
-          <div key={label} className="flex flex-col items-center">
-            <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848]/20 text-[#007848]" : "bg-gray-100 text-gray-400"}`}>
-              {isDone ? <FaCheck className="text-xs" /> : n}
+          <div key={label} className="flex items-start gap-4">
+            <div className="flex flex-col items-center">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shrink-0 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848] text-white" : "bg-gray-100 text-gray-400"}`}>
+                {isDone ? <FaCheck className="text-xs" /> : n}
+              </div>
+              {i < stepLabels.length - 1 && (
+                <div className={`w-0.5 h-10 transition-colors duration-300 ${isDone ? "bg-[#007848]" : "bg-gray-200"}`} />
+              )}
             </div>
-            <span className="text-[10px] md:text-xs mt-1 hidden md:block font-medium transition-colors">{label}</span>
+            <div className={`pt-1.5 transition-all duration-300 ${isCurrent ? "opacity-100" : isDone ? "opacity-60" : "opacity-40"}`}>
+              <p className={`text-sm font-semibold ${isCurrent ? "text-[#007848]" : "text-gray-600"}`}>{label}</p>
+              <p className="text-xs text-gray-400">{isCurrent ? "In progress" : isDone ? "Completed" : "Pending"}</p>
+            </div>
           </div>
         );
       })}
     </div>
-    <div className="relative h-1.5 bg-gray-100 rounded-full mt-3 mx-1 overflow-hidden">
-      <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
+    <div className="md:hidden mb-6">
+      <div className="flex items-center justify-between px-1">
+        {stepLabels.map((label, i) => {
+          const n = i + 1;
+          const isCurrent = step === n;
+          const isDone = step > n;
+          return (
+            <div key={label} className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848]/20 text-[#007848]" : "bg-gray-100 text-gray-400"}`}>
+                {isDone ? <FaCheck className="text-xs" /> : n}
+              </div>
+              <span className="text-[10px] mt-1 font-medium transition-colors text-gray-500">{label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="relative h-1.5 bg-gray-100 rounded-full mt-3 mx-1 overflow-hidden">
+        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
+      </div>
     </div>
-  </div>
+  </>
 );
 
 const SectionCard = ({ children }: { children: React.ReactNode }) => (
-  <div className="bg-gray-50/80 rounded-xl p-4 md:p-5 border border-gray-100">{children}</div>
+  <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-100 shadow-sm">{children}</div>
 );
 
 const SelectionButton = ({ selected, onClick, icon, title, subtitle, color }: {
   selected: boolean; onClick: () => void; icon: React.ReactNode; title: string; subtitle?: string; color?: string;
 }) => (
-  <button onClick={onClick} className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all cursor-pointer group ${selected ? "border-[#007848] bg-[#007848]/5 shadow-sm" : "border-gray-200 hover:border-[#007848]/30 hover:bg-gray-50"}`}>
-    <div className="flex items-center gap-3">
-      <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center transition-colors ${selected ? "bg-[#007848] text-white" : "bg-gray-100 text-gray-500 group-hover:bg-gray-200"}`}>
+  <button onClick={onClick} className={`w-full text-left p-4 md:p-5 rounded-2xl border-2 transition-all cursor-pointer group ${selected ? "border-[#007848] bg-gradient-to-r from-[#007848]/5 to-[#00a864]/5 shadow-md shadow-[#007848]/10" : "border-gray-200 hover:border-[#007848]/40 hover:shadow-md hover:bg-gray-50/50"}`}>
+    <div className="flex items-center gap-4">
+      <div className={`w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${selected ? "bg-gradient-to-br from-[#007848] to-[#00a864] text-white shadow-lg shadow-[#007848]/30 scale-110" : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:scale-105"}`}>
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <span className="font-semibold text-gray-800 text-sm md:text-base block truncate">{title}</span>
-        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+        <span className={`font-bold text-sm md:text-base block truncate ${selected ? "text-[#007848]" : "text-gray-800"}`}>{title}</span>
+        {subtitle && <p className={`text-xs mt-0.5 ${selected ? "text-[#007848]/70" : "text-gray-500"}`}>{subtitle}</p>}
       </div>
-      {selected && <FaCheckCircle className="text-[#007848] text-lg flex-shrink-0" />}
+      {selected && (
+        <div className="w-7 h-7 rounded-full bg-[#007848] flex items-center justify-center">
+          <FaCheck className="text-white text-xs" />
+        </div>
+      )}
     </div>
   </button>
 );
@@ -77,15 +106,15 @@ const FormInput = ({ label, type, value, onChange, onFocus, onBlur, placeholder,
   children?: React.ReactNode;
 }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
+    <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
     {type === "select" ? (
-      <select value={value} onChange={onChange} disabled={disabled} className={`w-full px-3 md:px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none bg-white transition ${error ? "border-red-400 bg-red-50" : "border-gray-300"}`}>
+      <select value={value} onChange={onChange} disabled={disabled} className={`w-full px-4 py-3 border-2 rounded-xl text-sm outline-none bg-white transition-all ${error ? "border-red-400 bg-red-50 ring-2 ring-red-100" : "border-gray-200 focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 hover:border-gray-300"}`}>
         {children}
       </select>
     ) : (
-      <input type={type} value={value} onChange={onChange} onFocus={onFocus} onBlur={onBlur} placeholder={placeholder} disabled={disabled} autoComplete={autoComplete} className={`w-full px-3 md:px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none transition ${error ? "border-red-400 bg-red-50" : "border-gray-300"}`} />
+      <input type={type} value={value} onChange={onChange} onFocus={onFocus} onBlur={onBlur} placeholder={placeholder} disabled={disabled} autoComplete={autoComplete} className={`w-full px-4 py-3 border-2 rounded-xl text-sm outline-none transition-all ${error ? "border-red-400 bg-red-50 ring-2 ring-red-100" : "border-gray-200 focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 hover:border-gray-300"}`} />
     )}
-    {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    {error && <p className="text-xs text-red-500 mt-1.5 font-medium flex items-center gap-1"><FaExclamationCircle />{error}</p>}
   </div>
 );
 
@@ -463,124 +492,94 @@ export default function ServicesPage() {
       >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
         <div
-          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out md:scale-100 md:opacity-100"
+          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-5xl max-h-[95vh] md:max-h-[90vh] overflow-hidden transition-all duration-300 ease-out md:scale-100 md:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-5 md:px-6 py-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-[#007848] to-[#00a864] px-5 md:px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#007848]/10 flex items-center justify-center">
-                <FaClock className="text-[#007848] text-sm" />
+              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                <FaClock className="text-white text-sm" />
               </div>
-              <h3 className="text-base md:text-lg font-bold text-gray-800">Schedule for Interview</h3>
+              <div>
+                <h3 className="text-base md:text-lg font-bold text-white">Schedule for Interview</h3>
+                <p className="text-xs text-green-100">Book your appointment with GCSU</p>
+              </div>
             </div>
             <button
               onClick={resetModal}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+              className="p-2 hover:bg-white/20 rounded-xl transition-all cursor-pointer"
             >
-              <FaTimes className="text-gray-400" />
+              <FaTimes className="text-white/80" />
             </button>
           </div>
 
-          <div className="p-5 md:p-6">
+          <div className="flex flex-col md:flex-row h-full max-h-[calc(95vh-68px)] md:max-h-[calc(90vh-68px)] overflow-hidden">
+            <div className="md:w-56 md:min-w-56 bg-gray-50/80 md:border-r border-gray-200 p-5 md:p-6 md:overflow-y-auto hidden md:block">
+              <ModalProgress step={step} stepLabels={stepLabels} progressPercent={progressPercent} />
+              <div className="mt-6 p-3 bg-white rounded-xl border border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Need help?</p>
+                <p className="text-xs text-gray-400">Contact GCSU at the EALA Building - Second Floor</p>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 md:p-8">
+              <div className="md:hidden mb-2">
+                <ModalProgress step={step} stepLabels={stepLabels} progressPercent={progressPercent} />
+              </div>
             {showConfirmation && confirmedData ? (
               <div>
-                <div id="confirmation-card" className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
-                  <div className={`p-5 text-white text-center ${confirmedData.isNoShowReschedule ? "bg-gradient-to-r from-orange-500 to-orange-400" : "bg-gradient-to-r from-[#007848] to-[#00a864]"}`}>
+                <div id="confirmation-card" className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-lg">
+                  <div className={`p-6 md:p-8 text-white text-center ${confirmedData.isNoShowReschedule ? "bg-gradient-to-r from-orange-500 to-orange-400" : "bg-gradient-to-r from-[#007848] to-[#00a864]"}`}>
                     {confirmedData.isNoShowReschedule ? (
-                      <><FaCheckCircle className="text-4xl mx-auto mb-2" />
-                      <h3 className="text-lg font-bold" style={{ color: "#ffffff" }}>You already finished interview</h3>
-                      <p className="text-sm mt-1" style={{ color: "#fef3c7" }}>Your reason has been noted. You may now proceed with your rescheduled interview.</p></>
+                      <><FaCheckCircle className="text-4xl mx-auto mb-3" />
+                      <h3 className="text-xl font-bold text-white">No-Show Rescheduled</h3>
+                      <p className="text-sm mt-1 text-orange-100">Your reason has been noted. Proceed with your new schedule.</p></>
                     ) : (
-                      <><FaCheckCircle className="text-4xl mx-auto mb-2" />
-                      <h3 className="text-lg font-bold" style={{ color: "#ffffff" }}>Interview Scheduled Successfully!</h3>
-                      <p className="text-sm mt-1" style={{ color: "#d1fae5" }}>Please check the details below.</p></>
+                      <><FaCheckCircle className="text-4xl mx-auto mb-3" />
+                      <h3 className="text-xl font-bold text-white">Interview Scheduled!</h3>
+                      <p className="text-sm mt-1 text-green-100">Your appointment has been confirmed.</p></>
                     )}
                   </div>
-                  <div className="p-5" style={{ borderTop: "1px solid #e5e7eb" }}>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Name:</span>
-                      <span className="col-span-2 font-semibold" style={{ color: "#1f2937" }}>{confirmedData.fullName}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Student ID:</span>
-                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.studentId || "N/A"}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Email:</span>
-                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.email || "N/A"}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Contact:</span>
-                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.contact || "N/A"}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Interview:</span>
-                      <span className="col-span-2 capitalize" style={{ color: "#1f2937" }}>{confirmedData.interviewType} Interview</span>
-                      {confirmedData.studentType && (
-                        <>
-                          <span className="font-medium" style={{ color: "#6b7280" }}>Student Type:</span>
-                          <span className="col-span-2 capitalize" style={{ color: "#1f2937" }}>{confirmedData.studentType}</span>
-                        </>
-                      )}
-                      {confirmedData.academicLevel && confirmedData.academicLevel !== confirmedData.studentType && (
-                        <>
-                          <span className="font-medium" style={{ color: "#6b7280" }}>Academic Level:</span>
-                          <span className="col-span-2 capitalize" style={{ color: "#1f2937" }}>{confirmedData.academicLevel}</span>
-                        </>
-                      )}
-                      {confirmedData.gradeLevel && (
-                        <>
-                          <span className="font-medium" style={{ color: "#6b7280" }}>Grade Level:</span>
-                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.gradeLevel}</span>
-                        </>
-                      )}
-                      {confirmedData.strand && (
-                        <>
-                          <span className="font-medium" style={{ color: "#6b7280" }}>Strand:</span>
-                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.strand}</span>
-                        </>
-                      )}
-                      {confirmedData.section && (
-                        <>
-                          <span className="font-medium" style={{ color: "#6b7280" }}>Section:</span>
-                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.section}</span>
-                        </>
-                      )}
-                      {confirmedData.department && (
-                        <>
-                          <span className="font-medium" style={{ color: "#6b7280" }}>Department:</span>
-                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.department}</span>
-                        </>
-                      )}
-                      {confirmedData.course && (
-                        <>
-                          <span className="font-medium" style={{ color: "#6b7280" }}>Course:</span>
-                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.course}</span>
-                        </>
-                      )}
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Schedule:</span>
-                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.scheduleTitle}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Date:</span>
-                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.scheduleDate}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Time:</span>
-                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.scheduleTimeStart} - {confirmedData.scheduleTimeEnd}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Location:</span>
-                      <span className="col-span-2 font-semibold" style={{ color: "#1f2937" }}>{confirmedData.location}</span>
-                      <span className="font-medium" style={{ color: "#6b7280" }}>Status:</span>
-                      <span className="col-span-2">
-                        <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full" style={{ backgroundColor: "#fef3c7", color: "#b45309" }}>Pending</span>
-                      </span>
+                  <div className="p-6 md:p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                      {[
+                        { l: "Name", v: confirmedData.fullName, b: true },
+                        { l: "Student ID", v: confirmedData.studentId || "N/A" },
+                        { l: "Email", v: confirmedData.email || "N/A" },
+                        { l: "Contact", v: confirmedData.contact || "N/A" },
+                        { l: "Interview", v: `${confirmedData.interviewType} Interview`, cap: true },
+                        ...(confirmedData.studentType ? [{ l: "Student Type", v: confirmedData.studentType, cap: true }] : []),
+                        ...(confirmedData.academicLevel && confirmedData.academicLevel !== confirmedData.studentType ? [{ l: "Academic Level", v: confirmedData.academicLevel, cap: true }] : []),
+                        ...(confirmedData.gradeLevel ? [{ l: "Grade Level", v: confirmedData.gradeLevel }] : []),
+                        ...(confirmedData.strand ? [{ l: "Strand", v: confirmedData.strand }] : []),
+                        ...(confirmedData.section ? [{ l: "Section", v: confirmedData.section }] : []),
+                        ...(confirmedData.department ? [{ l: "Department", v: confirmedData.department }] : []),
+                        ...(confirmedData.course ? [{ l: "Course", v: confirmedData.course }] : []),
+                        { l: "Schedule", v: confirmedData.scheduleTitle },
+                        { l: "Date", v: confirmedData.scheduleDate },
+                        { l: "Time", v: `${confirmedData.scheduleTimeStart} - ${confirmedData.scheduleTimeEnd}` },
+                        { l: "Location", v: confirmedData.location, b: true },
+                      ].map(({ l, v, cap, b }) => (
+                        <div key={l} className="flex items-baseline gap-2">
+                          <span className="text-gray-500 shrink-0 min-w-[90px]">{l}:</span>
+                          <span className={`text-gray-800 ${b ? "font-semibold" : ""} ${cap ? "capitalize" : ""}`}>{v}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="pt-2" style={{ borderTop: "1px solid #f3f4f6", marginTop: "12px" }}>
-                      <p className="text-xs text-center" style={{ color: "#9ca3af" }}>
-                        Presented to the Guidance Office on your scheduled date.
-                      </p>
+                    <div className="mt-6 pt-4 border-t border-gray-100">
+                      <p className="text-xs text-center text-gray-400">Present this confirmation to the Guidance Office on your scheduled date.</p>
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 mt-4">
+                <div className="flex gap-3 mt-6">
                   <button
                     onClick={downloadConfirmation}
-                    className="flex-1 px-5 py-2.5 bg-[#007848] text-white text-sm font-semibold rounded-xl hover:bg-[#005f3a] transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-[#007848] to-[#00a864] text-white text-sm font-semibold rounded-xl hover:from-[#005f3a] hover:to-[#008f56] transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-[#007848]/20"
                   >
-                    <FaUpload className="text-xs" /> Download as PDF
+                    <FaUpload className="text-xs" /> Download Confirmation
                   </button>
                   <button
                     onClick={resetModal}
-                    className="px-5 py-2.5 border-2 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
-                    style={{ borderColor: "#e5e7eb", color: "#374151" }}
+                    className="px-6 py-3 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-100 transition-all cursor-pointer"
                   >
                     Close
                   </button>
@@ -625,7 +624,7 @@ export default function ServicesPage() {
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mb-4 font-medium">Select the type of interview you need:</p>
+                <p className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2"><span className="w-1.5 h-5 bg-[#007848] rounded-full"></span>Select the type of interview you need</p>
                 <div className="space-y-3">
                   <SelectionButton
                     selected={interviewType === "initial"}
@@ -647,7 +646,7 @@ export default function ServicesPage() {
 
                 {interviewType === "initial" && (
                   <div className="mt-5 pt-5 border-t border-gray-200">
-                    <p className="text-sm text-gray-600 mb-3 font-medium">Select your student type:</p>
+                    <p className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><span className="w-1.5 h-5 bg-[#007848] rounded-full"></span>Select your student type</p>
                     <div className="space-y-2">
                       {["Freshmen", "Transferee"].map((type) => (
                         <SelectionButton
@@ -674,7 +673,7 @@ export default function ServicesPage() {
                         className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
                           !studentType || (hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))
                             ? "bg-gray-300 text-white cursor-not-allowed"
-                            : "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
+                            : "bg-gradient-to-r from-[#007848] to-[#00a864] text-white hover:from-[#005f3a] hover:to-[#008f56] cursor-pointer shadow-md shadow-[#007848]/20 hover:shadow-lg hover:shadow-[#007848]/30"
                         }`}
                       >
                         Next <FaArrowRight className="text-xs" />
@@ -693,7 +692,7 @@ export default function ServicesPage() {
                         clearError("studentId");
                         nextStep();
                       }}
-                      className="px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
+                      className="px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm bg-gradient-to-r from-[#007848] to-[#00a864] text-white hover:from-[#005f3a] hover:to-[#008f56] cursor-pointer shadow-md shadow-[#007848]/20 hover:shadow-lg hover:shadow-[#007848]/30"
                     >
                       Next <FaArrowRight className="text-xs" />
                     </button>
@@ -704,7 +703,7 @@ export default function ServicesPage() {
 
             {step === 2 && interviewType === "exit" && (
               <SectionCard>
-                <p className="text-sm text-gray-600 mb-4 font-medium">Select your current level:</p>
+                <p className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2"><span className="w-1.5 h-5 bg-[#007848] rounded-full"></span>Select your current level</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { value: "GS", label: "Grade School", sub: "Gr6" },
@@ -715,12 +714,17 @@ export default function ServicesPage() {
                     <button
                       key={value}
                       onClick={() => { setStudentType(value); nextStep(); }}
-                      className={`text-center p-4 md:p-5 rounded-xl border-2 transition-all cursor-pointer group hover:shadow-sm ${
+                      className={`text-center p-5 rounded-2xl border-2 transition-all cursor-pointer group ${
                         studentType === value
-                          ? "border-[#007848] bg-[#007848]/5 shadow-sm"
-                          : "border-gray-200 hover:border-[#007848]/30"
+                          ? "border-[#007848] bg-gradient-to-b from-[#007848]/5 to-[#00a864]/5 shadow-md shadow-[#007848]/10"
+                          : "border-gray-100 hover:border-[#007848]/40 hover:shadow-md hover:bg-gray-50/50"
                       }`}
                     >
+                      <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-3 transition-all duration-300 ${
+                        studentType === value ? "bg-gradient-to-br from-[#007848] to-[#00a864] text-white shadow-lg shadow-[#007848]/30 scale-110" : "bg-gray-100 text-gray-400 group-hover:bg-gray-200"
+                      }`}>
+                        <FaUsers className="text-lg" />
+                      </div>
                       <span className={`font-bold block text-sm md:text-base ${studentType === value ? "text-[#007848]" : "text-gray-800"}`}>
                         {label}
                       </span>
@@ -733,7 +737,7 @@ export default function ServicesPage() {
 
             {((step === 2 && interviewType === "initial") || (step === 3 && interviewType === "exit")) && (
               <SectionCard>
-                <p className="text-sm text-gray-600 mb-4 font-medium">Please provide your personal details:</p>
+                <p className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2"><span className="w-1.5 h-5 bg-[#007848] rounded-full"></span>Please provide your personal details</p>
                 <div className="space-y-3 md:space-y-4">
                   <FormInput
                     label="Full Name"
@@ -822,9 +826,9 @@ export default function ServicesPage() {
                   )}
 
                   {studentType === "Freshmen" || studentType === "Transferee" ? (
-                    <div className="pt-2 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Current Level</p>
-                      <div className="grid grid-cols-2 gap-2">
+                    <div className="pt-4 border-t border-gray-100">
+                      <p className="text-sm font-bold text-gray-800 mb-3">Current Level</p>
+                      <div className="grid grid-cols-2 gap-3">
                         {[
                           { value: "GS", label: "Grade School" },
                           { value: "JHS", label: "Junior High" },
@@ -834,11 +838,11 @@ export default function ServicesPage() {
                           <button
                             key={value}
                             onClick={() => setAcademicLevel(value)}
-                            className={`text-center p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                              academicLevel === value ? "border-[#007848] bg-[#007848]/5" : "border-gray-200 hover:border-[#007848]/30"
+                            className={`text-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                              academicLevel === value ? "border-[#007848] bg-gradient-to-b from-[#007848]/5 to-[#00a864]/5 shadow-md shadow-[#007848]/10" : "border-gray-100 hover:border-[#007848]/40 hover:shadow-md"
                             }`}
                           >
-                            <span className={`font-semibold text-sm ${academicLevel === value ? "text-[#007848]" : "text-gray-800"}`}>
+                            <span className={`font-bold text-sm ${academicLevel === value ? "text-[#007848]" : "text-gray-700"}`}>
                               {label}
                             </span>
                           </button>
@@ -848,12 +852,12 @@ export default function ServicesPage() {
                   ) : null}
 
                   <div className="flex justify-between pt-3">
-                    <button onClick={prevStep} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-2">
+                    <button onClick={prevStep} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all cursor-pointer flex items-center gap-2">
                       <FaArrowLeft className="text-xs" /> Back
                     </button>
                     <button
                       onClick={() => { if (validateDetails()) nextStep(); }}
-                      className="px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
+                      className="px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm bg-gradient-to-r from-[#007848] to-[#00a864] text-white hover:from-[#005f3a] hover:to-[#008f56] cursor-pointer shadow-md shadow-[#007848]/20 hover:shadow-lg hover:shadow-[#007848]/30"
                     >
                       Next <FaArrowRight className="text-xs" />
                     </button>
@@ -864,18 +868,20 @@ export default function ServicesPage() {
 
             {((step === 3 && interviewType === "initial") || (step === 4 && interviewType === "exit")) && (
               <SectionCard>
-                {hasPreviousNoShow && (
-                  <div className="mb-5 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-                    <div className="flex items-center gap-2 mb-3">
-                      <FaExclamationCircle className="text-orange-500" />
-                      <p className="text-sm font-semibold text-orange-800">Reason for No Show</p>
-                    </div>
-                    <p className="text-xs text-orange-600 mb-3">You missed your previous scheduled interview. Please tell us why and pick a new schedule.</p>
-                    <select
-                      value={noShowReason}
-                      onChange={(e) => setNoShowReason(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-orange-200 rounded-xl text-sm bg-white outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 text-gray-900 transition"
-                    >
+                  {hasPreviousNoShow && (
+                    <div className="mb-6 p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                          <FaExclamationCircle className="text-amber-600" />
+                        </div>
+                        <p className="text-sm font-bold text-amber-800">Reason for No-Show</p>
+                      </div>
+                      <p className="text-xs text-amber-600 mb-4">You missed your previous interview. Tell us why and pick a new schedule.</p>
+                      <select
+                        value={noShowReason}
+                        onChange={(e) => setNoShowReason(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-xl text-sm bg-white outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 text-gray-900 transition"
+                      >
                       <option value="">Select a reason</option>
                       <option value="Student forgot the schedule">Student forgot the schedule</option>
                       <option value="Student had a class conflict">Student had a class conflict</option>
@@ -895,50 +901,56 @@ export default function ServicesPage() {
                         onChange={(e) => setNoShowCustomReason(e.target.value)}
                         placeholder="Please specify..."
                         rows={2}
-                        className="w-full px-3 py-2.5 border border-orange-200 rounded-xl text-sm bg-white outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 text-gray-900 transition resize-none mt-3"
+                        className="w-full px-4 py-3 border-2 border-amber-200 rounded-xl text-sm bg-white outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 text-gray-900 transition resize-none mt-3"
                       />
                     )}
                   </div>
                 )}
-                <p className="text-sm text-gray-600 mb-4 font-medium">Select your preferred schedule:</p>
+                <p className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2"><span className="w-1.5 h-5 bg-[#007848] rounded-full"></span>Select your preferred schedule</p>
                 {schedules.length === 0 ? (
-                  <div className="bg-white rounded-xl p-8 text-center border-2 border-dashed border-gray-200">
-                    <FaClock className="mx-auto text-3xl text-gray-300 mb-3" />
-                    <p className="text-gray-500 text-sm font-medium">No schedules available</p>
-                    <p className="text-xs text-gray-400 mt-1">Schedules will be available once posted by the admin.</p>
+                  <div className="bg-white rounded-2xl p-10 text-center border-2 border-dashed border-gray-200">
+                    <div className="w-16 h-16 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                      <FaClock className="text-3xl text-gray-300" />
+                    </div>
+                    <p className="text-gray-500 font-semibold">No schedules available</p>
+                    <p className="text-xs text-gray-400 mt-1.5">Schedules will appear once posted by the admin.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
                     {schedules.map((s) => {
                       const available = s.slots - s.booked;
                       return (
                         <button
                           key={s.id}
                           onClick={() => setSelectedSchedule(s.id)}
-                          className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                          className={`w-full text-left p-4 md:p-5 rounded-2xl border-2 transition-all cursor-pointer ${
                             selectedSchedule === s.id
-                              ? "border-[#007848] bg-[#007848]/5 shadow-sm"
-                              : "border-gray-200 hover:border-[#007848]/30 hover:bg-gray-50"
+                              ? "border-[#007848] bg-gradient-to-r from-[#007848]/5 to-[#00a864]/5 shadow-md shadow-[#007848]/10"
+                              : "border-gray-100 hover:border-[#007848]/30 hover:shadow-md hover:bg-gray-50/50"
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center justify-between gap-4">
                             <div className="min-w-0 flex-1">
-                              <span className={`font-semibold text-sm block truncate ${selectedSchedule === s.id ? "text-[#007848]" : "text-gray-800"}`}>
+                              <span className={`font-bold text-sm block truncate ${selectedSchedule === s.id ? "text-[#007848]" : "text-gray-800"}`}>
                                 {s.title}
                               </span>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                <span className="text-xs text-gray-500">{s.date}</span>
-                                <span className="text-xs text-gray-400">•</span>
+                              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                <span className="text-xs text-gray-500 flex items-center gap-1"><FaClock className="text-[10px]" />{s.date}</span>
+                                <span className="text-xs text-gray-300">|</span>
                                 <span className="text-xs text-gray-500">{s.timeStart} - {s.timeEnd}</span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                                available <= 3 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                                available <= 3 ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"
                               }`}>
-                                {available} left
+                                {available} slot{available !== 1 ? "s" : ""} left
                               </span>
-                              {selectedSchedule === s.id && <FaCheckCircle className="text-[#007848] text-lg" />}
+                              {selectedSchedule === s.id && (
+                                <div className="w-7 h-7 rounded-full bg-[#007848] flex items-center justify-center">
+                                  <FaCheck className="text-white text-xs" />
+                                </div>
+                              )}
                             </div>
                           </div>
                         </button>
@@ -947,16 +959,17 @@ export default function ServicesPage() {
                   </div>
                 )}
                 {submitMessage && (
-                  <div className={`mt-4 px-4 py-3 rounded-xl text-sm font-medium ${
+                  <div className={`mt-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 ${
                     submitMessage.type === "success"
                       ? "bg-green-50 border border-green-200 text-green-700"
                       : "bg-red-50 border border-red-200 text-red-600"
                   }`}>
+                    {submitMessage.type === "error" ? <FaExclamationCircle /> : <FaCheckCircle />}
                     {submitMessage.text}
                   </div>
                 )}
                 <div className="flex justify-between pt-4">
-                  <button onClick={prevStep} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-2">
+                  <button onClick={prevStep} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all cursor-pointer flex items-center gap-2">
                     <FaArrowLeft className="text-xs" /> Back
                   </button>
                   <button
@@ -964,7 +977,7 @@ export default function ServicesPage() {
                     onClick={() => { if (validateDetails()) handleSubmitAppointment(); }}
                     className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
                       selectedSchedule && !submitting && !(hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))
-                        ? "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
+                        ? "bg-gradient-to-r from-[#007848] to-[#00a864] text-white hover:from-[#005f3a] hover:to-[#008f56] cursor-pointer shadow-md shadow-[#007848]/20 hover:shadow-lg hover:shadow-[#007848]/30"
                         : "bg-gray-300 text-white cursor-not-allowed"
                     }`}
                   >
@@ -978,6 +991,7 @@ export default function ServicesPage() {
               </SectionCard>
             )}
             </>)}
+            </div>
           </div>
         </div>
 
