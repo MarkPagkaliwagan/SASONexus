@@ -16,11 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Student Affairs & Services Office | San Pablo Colleges",
+  title: "Student Affairs Services Office",
   description: "Student Affairs and Services Office of San Pablo Colleges - Supporting students in their academic journey.",
   icons: [
-    { rel: "icon", url: "/SPCLOGO.png" },
-    { rel: "apple-touch-icon", url: "/SPCLOGO.png" },
+    { rel: "icon", url: "/SASOLOGO.png" },
+    { rel: "apple-touch-icon", url: "/SASOLOGO.png" },
   ],
 };
 
