@@ -62,7 +62,7 @@ const SelectionButton = ({ selected, onClick, icon, title, subtitle, color }: {
   </button>
 );
 
-const FormInput = ({ label, type, value, onChange, onFocus, onBlur, placeholder, disabled, autoComplete, children }: {
+const FormInput = ({ label, type, value, onChange, onFocus, onBlur, placeholder, disabled, autoComplete, error, required, children }: {
   label: string;
   type?: string;
   value?: any;
@@ -72,17 +72,20 @@ const FormInput = ({ label, type, value, onChange, onFocus, onBlur, placeholder,
   placeholder?: string;
   disabled?: boolean;
   autoComplete?: string;
+  error?: string;
+  required?: boolean;
   children?: React.ReactNode;
 }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
     {type === "select" ? (
-      <select value={value} onChange={onChange} disabled={disabled} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none bg-white transition">
+      <select value={value} onChange={onChange} disabled={disabled} className={`w-full px-3 md:px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none bg-white transition ${error ? "border-red-400 bg-red-50" : "border-gray-300"}`}>
         {children}
       </select>
     ) : (
-      <input type={type} value={value} onChange={onChange} onFocus={onFocus} onBlur={onBlur} placeholder={placeholder} disabled={disabled} autoComplete={autoComplete} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none transition" />
+      <input type={type} value={value} onChange={onChange} onFocus={onFocus} onBlur={onBlur} placeholder={placeholder} disabled={disabled} autoComplete={autoComplete} className={`w-full px-3 md:px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none transition ${error ? "border-red-400 bg-red-50" : "border-gray-300"}`} />
     )}
+    {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
   </div>
 );
 
@@ -118,6 +121,34 @@ export default function ServicesPage() {
   const [noShowCustomReason, setNoShowCustomReason] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedData, setConfirmedData] = useState<any>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) => setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+
+  function validateDetails(): boolean {
+    const errs: Record<string, string> = {};
+    if (!studentId || studentId.trim().length < 2) errs.studentId = "School ID is required";
+    if (!fullName || fullName.trim().length < 2) errs.fullName = "Full name is required";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Valid email is required";
+    if (!contact || !/^09\d{9}$/.test(contact)) errs.contact = "Valid PH mobile (09XXXXXXXXX) is required";
+    const level = studentType === "Freshmen" || studentType === "Transferee" ? academicLevel : studentType;
+    if (level === "GS" || level === "JHS") {
+      if (!section || section.trim().length < 1) errs.section = "Section is required";
+    }
+    if (level === "SHS") {
+      if (!gradeLevel) errs.gradeLevel = "Grade level is required";
+      if (!strand) errs.strand = "Strand is required";
+      if (!section || section.trim().length < 1) errs.section = "Section is required";
+    }
+    if (level === "college") {
+      if (!department) errs.department = "Department is required";
+      if (!course) errs.course = "Course is required";
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+
 
   useEffect(() => {
     if (showModal) {
@@ -309,6 +340,7 @@ export default function ServicesPage() {
     setHasPreviousNoShow(false);
     setNoShowReason("");
     setNoShowCustomReason("");
+    setErrors({});
   };
 
   const downloadConfirmation = () => {
@@ -565,11 +597,13 @@ export default function ServicesPage() {
                     label="Student ID"
                     type="text"
                     value={studentId}
-                    onChange={(e: any) => { setStudentId(e.target.value); setShowSuggestions(true); }}
+                    onChange={(e: any) => { setStudentId(e.target.value); setShowSuggestions(true); clearError("studentId"); }}
                     onFocus={() => { if (studentSuggestions.length > 0) setShowSuggestions(true); }}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     placeholder="Enter your student ID"
                     autoComplete="off"
+                    required
+                    error={errors.studentId}
                   />
                   {isSearchingStudent && (
                     <p className="text-xs text-gray-400 mt-1">Fetching...</p>
@@ -628,7 +662,14 @@ export default function ServicesPage() {
                     </div>
                     <div className="flex justify-end pt-4">
                       <button
-                        onClick={nextStep}
+                        onClick={() => {
+                          if (!studentId || studentId.trim().length < 2) {
+                            setErrors((prev) => ({ ...prev, studentId: "School ID is required" }));
+                            return;
+                          }
+                          clearError("studentId");
+                          nextStep();
+                        }}
                         disabled={!studentType || (hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))}
                         className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
                           !studentType || (hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))
@@ -644,13 +685,15 @@ export default function ServicesPage() {
                 {interviewType === "exit" && (
                   <div className="flex justify-end pt-4">
                     <button
-                      onClick={nextStep}
-                      disabled={hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))}
-                      className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
-                        hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))
-                          ? "bg-gray-300 text-white cursor-not-allowed"
-                          : "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
-                      }`}
+                      onClick={() => {
+                        if (!studentId || studentId.trim().length < 2) {
+                          setErrors((prev) => ({ ...prev, studentId: "School ID is required" }));
+                          return;
+                        }
+                        clearError("studentId");
+                        nextStep();
+                      }}
+                      className="px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
                     >
                       Next <FaArrowRight className="text-xs" />
                     </button>
@@ -696,23 +739,29 @@ export default function ServicesPage() {
                     label="Full Name"
                     type="text"
                     value={fullName}
-                    onChange={(e: any) => setFullName(e.target.value)}
+                    onChange={(e: any) => { setFullName(e.target.value); clearError("fullName"); }}
                     placeholder="Enter your full name"
+                    required
+                    error={errors.fullName}
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FormInput
                       label="Email"
                       type="email"
                       value={email}
-                      onChange={(e: any) => setEmail(e.target.value)}
+                      onChange={(e: any) => { setEmail(e.target.value); clearError("email"); }}
                       placeholder="your@email.com"
+                      required
+                      error={errors.email}
                     />
                     <FormInput
                       label="Contact No."
                       type="text"
                       value={contact}
-                      onChange={(e: any) => setContact(e.target.value)}
+                      onChange={(e: any) => { setContact(e.target.value); clearError("contact"); }}
                       placeholder="09XXXXXXXXX"
+                      required
+                      error={errors.contact}
                     />
                   </div>
 
@@ -721,20 +770,22 @@ export default function ServicesPage() {
                       label="Section"
                       type="text"
                       value={section}
-                      onChange={(e: any) => setSection(e.target.value)}
+                      onChange={(e: any) => { setSection(e.target.value); clearError("section"); }}
                       placeholder="Enter your section"
+                      required
+                      error={errors.section}
                     />
                   )}
 
                   {(studentType === "SHS" || academicLevel === "SHS") && (
                     <div className="space-y-3 pt-2 border-t border-gray-200">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <FormInput label="Grade Level" type="select" value={gradeLevel} onChange={(e: any) => setGradeLevel(e.target.value)}>
+                        <FormInput label="Grade Level" type="select" value={gradeLevel} onChange={(e: any) => { setGradeLevel(e.target.value); clearError("gradeLevel"); }} required error={errors.gradeLevel}>
                           <option value="">Select</option>
                           <option value="Grade 11">Grade 11</option>
                           <option value="Grade 12">Grade 12</option>
                         </FormInput>
-                        <FormInput label="Strand" type="select" value={strand} onChange={(e: any) => setStrand(e.target.value)}>
+                        <FormInput label="Strand" type="select" value={strand} onChange={(e: any) => { setStrand(e.target.value); clearError("strand"); }} required error={errors.strand}>
                           <option value="">Select</option>
                           {strands.map((s) => (
                             <option key={s.id} value={s.name}>{s.name}</option>
@@ -745,21 +796,23 @@ export default function ServicesPage() {
                         label="Section"
                         type="text"
                         value={section}
-                        onChange={(e: any) => setSection(e.target.value)}
+                        onChange={(e: any) => { setSection(e.target.value); clearError("section"); }}
                         placeholder="Enter your section"
+                        required
+                        error={errors.section}
                       />
                     </div>
                   )}
 
                   {(studentType === "college" || academicLevel === "college") && (
                     <div className="space-y-3 pt-2 border-t border-gray-200">
-                      <FormInput label="Department" type="select" value={department} onChange={(e: any) => { setDepartment(e.target.value); setCourse(""); }}>
+                      <FormInput label="Department" type="select" value={department} onChange={(e: any) => { setDepartment(e.target.value); setCourse(""); clearError("department"); }} required error={errors.department}>
                         <option value="">Select department</option>
                         {departments.map((d) => (
                           <option key={d.id} value={d.name}>{d.name}</option>
                         ))}
                       </FormInput>
-                      <FormInput label="Course" type="select" value={course} onChange={(e: any) => setCourse(e.target.value)} disabled={!department}>
+                      <FormInput label="Course" type="select" value={course} onChange={(e: any) => { setCourse(e.target.value); clearError("course"); }} disabled={!department} required error={errors.course}>
                         <option value="">Select course</option>
                         {courses.map((c) => (
                           <option key={c.id} value={c.name}>{c.name}</option>
@@ -799,13 +852,8 @@ export default function ServicesPage() {
                       <FaArrowLeft className="text-xs" /> Back
                     </button>
                     <button
-                      onClick={nextStep}
-                      disabled={hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))}
-                      className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
-                        hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))
-                          ? "bg-gray-300 text-white cursor-not-allowed"
-                          : "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
-                      }`}
+                      onClick={() => { if (validateDetails()) nextStep(); }}
+                      className="px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
                     >
                       Next <FaArrowRight className="text-xs" />
                     </button>
@@ -913,7 +961,7 @@ export default function ServicesPage() {
                   </button>
                   <button
                     disabled={!selectedSchedule || submitting || (hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))}
-                    onClick={handleSubmitAppointment}
+                    onClick={() => { if (validateDetails()) handleSubmitAppointment(); }}
                     className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
                       selectedSchedule && !submitting && !(hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))
                         ? "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
