@@ -5,9 +5,10 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
   FaUserFriends, FaUsers, FaClinicMedical, FaChurch, FaRunning,
-  FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock
+  FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock, FaExclamationCircle
 } from "react-icons/fa";
-import { submitInterviewAppointment } from "@/lib/actions";
+import { submitInterviewAppointment, checkStudentNoShow, checkStudentAnyNoShow, fetchStudentDetails } from "@/lib/actions";
+import { jsPDF } from "jspdf";
 
 const units = [
   { name: "Guidance Office", icon: FaUserFriends },
@@ -16,6 +17,74 @@ const units = [
   { name: "Campus Ministry", icon: FaChurch },
   { name: "Sports Development Unit", icon: FaRunning },
 ];
+
+const ModalProgress = ({ step, stepLabels, progressPercent }: { step: number; stepLabels: string[]; progressPercent: number }) => (
+  <div className="mb-6">
+    <div className="flex items-center justify-between px-1">
+      {stepLabels.map((label, i) => {
+        const n = i + 1;
+        const isCurrent = step === n;
+        const isDone = step > n;
+        return (
+          <div key={label} className="flex flex-col items-center">
+            <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848]/20 text-[#007848]" : "bg-gray-100 text-gray-400"}`}>
+              {isDone ? <FaCheck className="text-xs" /> : n}
+            </div>
+            <span className="text-[10px] md:text-xs mt-1 hidden md:block font-medium transition-colors">{label}</span>
+          </div>
+        );
+      })}
+    </div>
+    <div className="relative h-1.5 bg-gray-100 rounded-full mt-3 mx-1 overflow-hidden">
+      <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
+    </div>
+  </div>
+);
+
+const SectionCard = ({ children }: { children: React.ReactNode }) => (
+  <div className="bg-gray-50/80 rounded-xl p-4 md:p-5 border border-gray-100">{children}</div>
+);
+
+const SelectionButton = ({ selected, onClick, icon, title, subtitle, color }: {
+  selected: boolean; onClick: () => void; icon: React.ReactNode; title: string; subtitle?: string; color?: string;
+}) => (
+  <button onClick={onClick} className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all cursor-pointer group ${selected ? "border-[#007848] bg-[#007848]/5 shadow-sm" : "border-gray-200 hover:border-[#007848]/30 hover:bg-gray-50"}`}>
+    <div className="flex items-center gap-3">
+      <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center transition-colors ${selected ? "bg-[#007848] text-white" : "bg-gray-100 text-gray-500 group-hover:bg-gray-200"}`}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="font-semibold text-gray-800 text-sm md:text-base block truncate">{title}</span>
+        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+      </div>
+      {selected && <FaCheckCircle className="text-[#007848] text-lg flex-shrink-0" />}
+    </div>
+  </button>
+);
+
+const FormInput = ({ label, type, value, onChange, onFocus, onBlur, placeholder, disabled, autoComplete, children }: {
+  label: string;
+  type?: string;
+  value?: any;
+  onChange?: (e: any) => void;
+  onFocus?: (e: any) => void;
+  onBlur?: (e: any) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  autoComplete?: string;
+  children?: React.ReactNode;
+}) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    {type === "select" ? (
+      <select value={value} onChange={onChange} disabled={disabled} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none bg-white transition">
+        {children}
+      </select>
+    ) : (
+      <input type={type} value={value} onChange={onChange} onFocus={onFocus} onBlur={onBlur} placeholder={placeholder} disabled={disabled} autoComplete={autoComplete} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none transition" />
+    )}
+  </div>
+);
 
 export default function ServicesPage() {
   const [showModal, setShowModal] = useState(false);
@@ -41,6 +110,14 @@ export default function ServicesPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [studentSuggestions, setStudentSuggestions] = useState<{ studentId: string; fullName: string; email: string; contact: string }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearchingStudent, setIsSearchingStudent] = useState(false);
+  const [hasPreviousNoShow, setHasPreviousNoShow] = useState(false);
+  const [noShowReason, setNoShowReason] = useState("");
+  const [noShowCustomReason, setNoShowCustomReason] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedData, setConfirmedData] = useState<any>(null);
 
   useEffect(() => {
     if (showModal) {
@@ -62,11 +139,90 @@ export default function ServicesPage() {
     if (!showModal || !interviewType) return;
     const scheduleStep = interviewType === "initial" ? 3 : 4;
     if (step === scheduleStep) {
-      fetch(`/api/interview-schedules?type=${interviewType}`)
+      const level = interviewType === "exit" ? studentType : academicLevel;
+      const deptParam = level && level !== "college" ? level : level === "college" ? "College" : "";
+      fetch(`/api/interview-schedules?type=${interviewType}${deptParam ? `&department=${deptParam}` : ""}`)
         .then((r) => r.json()).then(setSchedules);
       setSelectedSchedule(null);
     }
-  }, [step, showModal, interviewType]);
+  }, [step, showModal, interviewType, studentType, academicLevel]);
+
+  useEffect(() => {
+    if (!studentId || studentId.length < 2) {
+      setStudentSuggestions([]);
+      setShowSuggestions(false);
+      setIsSearchingStudent(false);
+      return;
+    }
+    setIsSearchingStudent(true);
+    const timer = setTimeout(() => {
+      fetch(`/api/students?q=${encodeURIComponent(studentId)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          setStudentSuggestions(data);
+          setShowSuggestions(data.length > 0);
+          setIsSearchingStudent(false);
+          if (data.length > 0) {
+            const match = data.find((s: any) => s.studentId === studentId);
+            if (match) {
+              setFullName(match.fullName);
+              setEmail(match.email);
+              setContact(match.contact);
+            }
+          }
+        });
+    }, 200);
+    return () => { clearTimeout(timer); setIsSearchingStudent(false); };
+  }, [studentId]);
+
+  useEffect(() => {
+    if (!studentId || studentId.length < 2) {
+      setHasPreviousNoShow(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const details = await fetchStudentDetails(studentId);
+      if (details) {
+        setFullName(details.fullName || "");
+        setEmail(details.email || "");
+        setContact(details.contact || "");
+      }
+      if (interviewType) {
+        const noShow = await checkStudentNoShow(studentId, interviewType);
+        setHasPreviousNoShow(!!noShow);
+        if (!noShow) {
+          setNoShowReason("");
+          setNoShowCustomReason("");
+        }
+      } else {
+        const anyNoShow = await checkStudentAnyNoShow(studentId);
+        if (anyNoShow) {
+          setInterviewType(anyNoShow.interviewType as "initial" | "exit");
+          setHasPreviousNoShow(true);
+          const schedStep = anyNoShow.interviewType === "initial" ? 3 : 4;
+          setStep(schedStep);
+        }
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [studentId, interviewType]);
+
+  const selectStudentSuggestion = (s: { studentId: string; fullName: string; email: string; contact: string }) => {
+    setStudentId(s.studentId);
+    setFullName(s.fullName);
+    setEmail(s.email);
+    setContact(s.contact);
+    setShowSuggestions(false);
+    if (interviewType && s.studentId) {
+      checkStudentNoShow(s.studentId, interviewType).then((hasNoShow) => {
+        setHasPreviousNoShow(hasNoShow);
+        if (!hasNoShow) {
+          setNoShowReason("");
+          setNoShowCustomReason("");
+        }
+      });
+    }
+  };
 
   const totalSteps = interviewType === "initial" ? 3 : interviewType === "exit" ? 4 : 1;
   const stepLabels = interviewType === "initial"
@@ -74,63 +230,6 @@ export default function ServicesPage() {
     : interviewType === "exit"
     ? ["Type", "Level", "Details", "Schedule"]
     : ["Type"];
-
-  const ModalProgress = () => (
-    <div className="mb-6">
-      <div className="flex items-center justify-between px-1">
-        {stepLabels.map((label, i) => {
-          const n = i + 1;
-          const isCurrent = step === n;
-          const isDone = step > n;
-          return (
-            <div key={label} className="flex flex-col items-center">
-              <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848]/20 text-[#007848]" : "bg-gray-100 text-gray-400"}`}>
-                {isDone ? <FaCheck className="text-xs" /> : n}
-              </div>
-              <span className="text-[10px] md:text-xs mt-1 hidden md:block font-medium transition-colors">{label}</span>
-            </div>
-          );
-        })}
-      </div>
-      <div className="relative h-1.5 bg-gray-100 rounded-full mt-3 mx-1 overflow-hidden">
-        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
-      </div>
-    </div>
-  );
-
-  const SectionCard = ({ children }: { children: React.ReactNode }) => (
-    <div className="bg-gray-50/80 rounded-xl p-4 md:p-5 border border-gray-100">{children}</div>
-  );
-
-  const SelectionButton = ({ selected, onClick, icon, title, subtitle, color }: {
-    selected: boolean; onClick: () => void; icon: React.ReactNode; title: string; subtitle?: string; color?: string;
-  }) => (
-    <button onClick={onClick} className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all cursor-pointer group ${selected ? "border-[#007848] bg-[#007848]/5 shadow-sm" : "border-gray-200 hover:border-[#007848]/30 hover:bg-gray-50"}`}>
-      <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center transition-colors ${selected ? "bg-[#007848] text-white" : "bg-gray-100 text-gray-500 group-hover:bg-gray-200"}`}>
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <span className="font-semibold text-gray-800 text-sm md:text-base block truncate">{title}</span>
-          {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
-        </div>
-        {selected && <FaCheckCircle className="text-[#007848] text-lg flex-shrink-0" />}
-      </div>
-    </button>
-  );
-
-  const FormInput = ({ label, ...props }: { label: string; [key: string]: any }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
-      {props.type === "select" ? (
-        <select {...props} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none bg-white transition">
-          {props.children}
-        </select>
-      ) : (
-        <input {...props} className="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#007848]/20 focus:border-[#007848] outline-none transition" />
-      )}
-    </div>
-  );
 
   async function handleSubmitAppointment() {
     if (!selectedSchedule) return;
@@ -151,9 +250,33 @@ export default function ServicesPage() {
       fd.set("section", section);
       fd.set("department", department);
       fd.set("course", course);
+      if (hasPreviousNoShow) {
+        const reason = noShowReason === "Others" ? noShowCustomReason : noShowReason;
+        fd.set("noShowReason", reason);
+      }
       await submitInterviewAppointment(fd);
-      setSubmitMessage({ type: "success", text: "Interview scheduled successfully!" });
-      setTimeout(resetModal, 1500);
+      const schedule = schedules.find((s) => s.id === selectedSchedule);
+      setConfirmedData({
+        fullName,
+        studentId,
+        email,
+        contact,
+        interviewType,
+        studentType,
+        academicLevel,
+        gradeLevel,
+        strand,
+        section,
+        department,
+        course,
+        scheduleTitle: schedule?.title || "",
+        scheduleDate: schedule?.date || "",
+        scheduleTimeStart: schedule?.timeStart || "",
+        scheduleTimeEnd: schedule?.timeEnd || "",
+        location: "EALA Building - Second Floor",
+        isNoShowReschedule: hasPreviousNoShow,
+      });
+      setShowConfirmation(true);
     } catch (err) {
       setSubmitMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to submit" });
     } finally {
@@ -179,6 +302,118 @@ export default function ServicesPage() {
     setSchedules([]);
     setSelectedSchedule(null);
     setSubmitMessage(null);
+    setShowConfirmation(false);
+    setConfirmedData(null);
+    setStudentSuggestions([]);
+    setShowSuggestions(false);
+    setHasPreviousNoShow(false);
+    setNoShowReason("");
+    setNoShowCustomReason("");
+  };
+
+  const downloadConfirmation = () => {
+    const d = confirmedData;
+    if (!d) return;
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageW = 210;
+    const margin = 20;
+    let y = margin;
+
+    pdf.setFillColor(0, 120, 72);
+    pdf.rect(0, 0, pageW, 40, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(18);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("INTERVIEW APPOINTMENT", pageW / 2, 18, { align: "center" });
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("CONFIRMATION", pageW / 2, 30, { align: "center" });
+
+    y = 55;
+    pdf.setDrawColor(0, 120, 72);
+    pdf.setLineWidth(0.5);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    pdf.setTextColor(0, 120, 72);
+    pdf.setFontSize(13);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("STUDENT INFORMATION", margin, y);
+    y += 10;
+
+    pdf.setTextColor(51, 51, 51);
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "bold");
+    const lines = [
+      ["Full Name:", d.fullName],
+      ["Student ID:", d.studentId || "N/A"],
+      ["Email:", d.email || "N/A"],
+      ["Contact No.:", d.contact || "N/A"],
+    ];
+    if (d.gradeLevel) lines.push(["Grade Level:", d.gradeLevel]);
+    if (d.strand) lines.push(["Strand:", d.strand]);
+    if (d.section) lines.push(["Section:", d.section]);
+    if (d.department) lines.push(["Department:", d.department]);
+    if (d.course) lines.push(["Course:", d.course]);
+
+    for (const [label, value] of lines) {
+      pdf.setFont("helvetica", "bold");
+      pdf.text(label, margin, y);
+      pdf.setFont("helvetica", "normal");
+      const lw = pdf.getTextWidth(label);
+      pdf.text(` ${value}`, margin + lw + 1, y);
+      y += 7;
+    }
+
+    y += 3;
+    pdf.setDrawColor(200, 200, 200);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    pdf.setTextColor(0, 120, 72);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.text("INTERVIEW DETAILS", margin, y);
+    y += 10;
+
+    pdf.setTextColor(51, 51, 51);
+    pdf.setFontSize(10);
+    const details = [
+      ["Interview Type:", `${d.interviewType.charAt(0).toUpperCase() + d.interviewType.slice(1)} Interview`],
+      ["Student Type:", d.studentType ? d.studentType.charAt(0).toUpperCase() + d.studentType.slice(1) : "N/A"],
+    ];
+    if (d.academicLevel && d.academicLevel !== d.studentType) {
+      details.push(["Academic Level:", d.academicLevel.charAt(0).toUpperCase() + d.academicLevel.slice(1)]);
+    }
+    details.push(
+      ["Schedule:", d.scheduleTitle],
+      ["Date:", d.scheduleDate],
+      ["Time:", `${d.scheduleTimeStart} - ${d.scheduleTimeEnd}`],
+      ["Location:", d.location],
+      ["Status:", "Pending"],
+    );
+    for (const [label, value] of details) {
+      pdf.setFont("helvetica", "bold");
+      pdf.text(label, margin, y);
+      pdf.setFont("helvetica", "normal");
+      const lw = pdf.getTextWidth(label);
+      pdf.text(` ${value}`, margin + lw + 1, y);
+      y += 7;
+    }
+
+    y += 5;
+    pdf.setDrawColor(200, 200, 200);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    pdf.setTextColor(102, 102, 102);
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", "italic");
+    pdf.text("Present this confirmation to the Guidance Office on your scheduled date.", pageW / 2, y, { align: "center" });
+    y += 6;
+    pdf.text("EALA Building - Second Floor", pageW / 2, y, { align: "center" });
+
+    pdf.save(`interview-confirmation-${(d.fullName || "scheduled").replace(/\s+/g, "-")}.pdf`);
   };
 
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
@@ -215,10 +450,147 @@ export default function ServicesPage() {
           </div>
 
           <div className="p-5 md:p-6">
-            <ModalProgress />
+            {showConfirmation && confirmedData ? (
+              <div>
+                <div id="confirmation-card" className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+                  <div className={`p-5 text-white text-center ${confirmedData.isNoShowReschedule ? "bg-gradient-to-r from-orange-500 to-orange-400" : "bg-gradient-to-r from-[#007848] to-[#00a864]"}`}>
+                    {confirmedData.isNoShowReschedule ? (
+                      <><FaCheckCircle className="text-4xl mx-auto mb-2" />
+                      <h3 className="text-lg font-bold" style={{ color: "#ffffff" }}>You already finished interview</h3>
+                      <p className="text-sm mt-1" style={{ color: "#fef3c7" }}>Your reason has been noted. You may now proceed with your rescheduled interview.</p></>
+                    ) : (
+                      <><FaCheckCircle className="text-4xl mx-auto mb-2" />
+                      <h3 className="text-lg font-bold" style={{ color: "#ffffff" }}>Interview Scheduled Successfully!</h3>
+                      <p className="text-sm mt-1" style={{ color: "#d1fae5" }}>Please check the details below.</p></>
+                    )}
+                  </div>
+                  <div className="p-5" style={{ borderTop: "1px solid #e5e7eb" }}>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Name:</span>
+                      <span className="col-span-2 font-semibold" style={{ color: "#1f2937" }}>{confirmedData.fullName}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Student ID:</span>
+                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.studentId || "N/A"}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Email:</span>
+                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.email || "N/A"}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Contact:</span>
+                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.contact || "N/A"}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Interview:</span>
+                      <span className="col-span-2 capitalize" style={{ color: "#1f2937" }}>{confirmedData.interviewType} Interview</span>
+                      {confirmedData.studentType && (
+                        <>
+                          <span className="font-medium" style={{ color: "#6b7280" }}>Student Type:</span>
+                          <span className="col-span-2 capitalize" style={{ color: "#1f2937" }}>{confirmedData.studentType}</span>
+                        </>
+                      )}
+                      {confirmedData.academicLevel && confirmedData.academicLevel !== confirmedData.studentType && (
+                        <>
+                          <span className="font-medium" style={{ color: "#6b7280" }}>Academic Level:</span>
+                          <span className="col-span-2 capitalize" style={{ color: "#1f2937" }}>{confirmedData.academicLevel}</span>
+                        </>
+                      )}
+                      {confirmedData.gradeLevel && (
+                        <>
+                          <span className="font-medium" style={{ color: "#6b7280" }}>Grade Level:</span>
+                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.gradeLevel}</span>
+                        </>
+                      )}
+                      {confirmedData.strand && (
+                        <>
+                          <span className="font-medium" style={{ color: "#6b7280" }}>Strand:</span>
+                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.strand}</span>
+                        </>
+                      )}
+                      {confirmedData.section && (
+                        <>
+                          <span className="font-medium" style={{ color: "#6b7280" }}>Section:</span>
+                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.section}</span>
+                        </>
+                      )}
+                      {confirmedData.department && (
+                        <>
+                          <span className="font-medium" style={{ color: "#6b7280" }}>Department:</span>
+                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.department}</span>
+                        </>
+                      )}
+                      {confirmedData.course && (
+                        <>
+                          <span className="font-medium" style={{ color: "#6b7280" }}>Course:</span>
+                          <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.course}</span>
+                        </>
+                      )}
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Schedule:</span>
+                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.scheduleTitle}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Date:</span>
+                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.scheduleDate}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Time:</span>
+                      <span className="col-span-2" style={{ color: "#1f2937" }}>{confirmedData.scheduleTimeStart} - {confirmedData.scheduleTimeEnd}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Location:</span>
+                      <span className="col-span-2 font-semibold" style={{ color: "#1f2937" }}>{confirmedData.location}</span>
+                      <span className="font-medium" style={{ color: "#6b7280" }}>Status:</span>
+                      <span className="col-span-2">
+                        <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full" style={{ backgroundColor: "#fef3c7", color: "#b45309" }}>Pending</span>
+                      </span>
+                    </div>
+                    <div className="pt-2" style={{ borderTop: "1px solid #f3f4f6", marginTop: "12px" }}>
+                      <p className="text-xs text-center" style={{ color: "#9ca3af" }}>
+                        Presented to the Guidance Office on your scheduled date.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={downloadConfirmation}
+                    className="flex-1 px-5 py-2.5 bg-[#007848] text-white text-sm font-semibold rounded-xl hover:bg-[#005f3a] transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <FaUpload className="text-xs" /> Download as PDF
+                  </button>
+                  <button
+                    onClick={resetModal}
+                    className="px-5 py-2.5 border-2 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer"
+                    style={{ borderColor: "#e5e7eb", color: "#374151" }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+            <>
+            <ModalProgress step={step} stepLabels={stepLabels} progressPercent={progressPercent} />
 
             {step === 1 && (
               <SectionCard>
+                <div className="relative mb-5">
+                  <FormInput
+                    label="Student ID"
+                    type="text"
+                    value={studentId}
+                    onChange={(e: any) => { setStudentId(e.target.value); setShowSuggestions(true); }}
+                    onFocus={() => { if (studentSuggestions.length > 0) setShowSuggestions(true); }}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    placeholder="Enter your student ID"
+                    autoComplete="off"
+                  />
+                  {isSearchingStudent && (
+                    <p className="text-xs text-gray-400 mt-1">Fetching...</p>
+                  )}
+                  {showSuggestions && studentSuggestions.length > 0 && (
+                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                      {studentSuggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onMouseDown={() => selectStudentSuggestion(s)}
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-[#007848]/5 hover:text-[#007848] transition-colors cursor-pointer border-b last:border-b-0 border-gray-100"
+                        >
+                          <span className="font-semibold text-gray-800">{s.fullName}</span>
+                          <span className="text-gray-400 ml-2">({s.studentId})</span>
+                          {s.email && <span className="text-gray-400 text-xs ml-2">{s.email}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mb-4 font-medium">Select the type of interview you need:</p>
                 <div className="space-y-3">
                   <SelectionButton
@@ -231,7 +603,7 @@ export default function ServicesPage() {
                   />
                   <SelectionButton
                     selected={interviewType === "exit"}
-                    onClick={() => { setInterviewType("exit"); setStudentType(""); nextStep(); }}
+                    onClick={() => { setInterviewType("exit"); setStudentType(""); }}
                     icon={<FaStar />}
                     title="Exit Interview"
                     subtitle="For graduating students (Gr6, Gr10, Gr12, College)"
@@ -257,12 +629,31 @@ export default function ServicesPage() {
                     <div className="flex justify-end pt-4">
                       <button
                         onClick={nextStep}
-                        disabled={!studentType}
-                        className="px-6 py-2.5 bg-[#007848] text-white text-sm font-semibold rounded-xl hover:bg-[#005f3a] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+                        disabled={!studentType || (hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))}
+                        className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
+                          !studentType || (hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))
+                            ? "bg-gray-300 text-white cursor-not-allowed"
+                            : "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
+                        }`}
                       >
                         Next <FaArrowRight className="text-xs" />
                       </button>
                     </div>
+                  </div>
+                )}
+                {interviewType === "exit" && (
+                  <div className="flex justify-end pt-4">
+                    <button
+                      onClick={nextStep}
+                      disabled={hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))}
+                      className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
+                        hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))
+                          ? "bg-gray-300 text-white cursor-not-allowed"
+                          : "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
+                      }`}
+                    >
+                      Next <FaArrowRight className="text-xs" />
+                    </button>
                   </div>
                 )}
               </SectionCard>
@@ -307,13 +698,6 @@ export default function ServicesPage() {
                     value={fullName}
                     onChange={(e: any) => setFullName(e.target.value)}
                     placeholder="Enter your full name"
-                  />
-                  <FormInput
-                    label="Student ID"
-                    type="text"
-                    value={studentId}
-                    onChange={(e: any) => setStudentId(e.target.value)}
-                    placeholder="Enter your student ID"
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FormInput
@@ -414,7 +798,15 @@ export default function ServicesPage() {
                     <button onClick={prevStep} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-2">
                       <FaArrowLeft className="text-xs" /> Back
                     </button>
-                    <button onClick={nextStep} className="px-6 py-2.5 bg-[#007848] text-white text-sm font-semibold rounded-xl hover:bg-[#005f3a] transition-all cursor-pointer flex items-center gap-2 shadow-sm">
+                    <button
+                      onClick={nextStep}
+                      disabled={hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))}
+                      className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
+                        hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason))
+                          ? "bg-gray-300 text-white cursor-not-allowed"
+                          : "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
+                      }`}
+                    >
                       Next <FaArrowRight className="text-xs" />
                     </button>
                   </div>
@@ -424,6 +816,42 @@ export default function ServicesPage() {
 
             {((step === 3 && interviewType === "initial") || (step === 4 && interviewType === "exit")) && (
               <SectionCard>
+                {hasPreviousNoShow && (
+                  <div className="mb-5 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FaExclamationCircle className="text-orange-500" />
+                      <p className="text-sm font-semibold text-orange-800">Reason for No Show</p>
+                    </div>
+                    <p className="text-xs text-orange-600 mb-3">You missed your previous scheduled interview. Please tell us why and pick a new schedule.</p>
+                    <select
+                      value={noShowReason}
+                      onChange={(e) => setNoShowReason(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-orange-200 rounded-xl text-sm bg-white outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 text-gray-900 transition"
+                    >
+                      <option value="">Select a reason</option>
+                      <option value="Student forgot the schedule">Student forgot the schedule</option>
+                      <option value="Student had a class conflict">Student had a class conflict</option>
+                      <option value="Student had a personal emergency">Student had a personal emergency</option>
+                      <option value="Student had a medical emergency">Student had a medical emergency</option>
+                      <option value="Student had a transportation issue">Student had a transportation issue</option>
+                      <option value="Student did not receive the notification">Student did not receive the notification</option>
+                      <option value="Student was absent from school">Student was absent from school</option>
+                      <option value="Student had a family obligation">Student had a family obligation</option>
+                      <option value="Scheduling conflict with other activities">Scheduling conflict with other activities</option>
+                      <option value="Student was not ready for the interview">Student was not ready for the interview</option>
+                      <option value="Others">Others</option>
+                    </select>
+                    {noShowReason === "Others" && (
+                      <textarea
+                        value={noShowCustomReason}
+                        onChange={(e) => setNoShowCustomReason(e.target.value)}
+                        placeholder="Please specify..."
+                        rows={2}
+                        className="w-full px-3 py-2.5 border border-orange-200 rounded-xl text-sm bg-white outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 text-gray-900 transition resize-none mt-3"
+                      />
+                    )}
+                  </div>
+                )}
                 <p className="text-sm text-gray-600 mb-4 font-medium">Select your preferred schedule:</p>
                 {schedules.length === 0 ? (
                   <div className="bg-white rounded-xl p-8 text-center border-2 border-dashed border-gray-200">
@@ -484,10 +912,10 @@ export default function ServicesPage() {
                     <FaArrowLeft className="text-xs" /> Back
                   </button>
                   <button
-                    disabled={!selectedSchedule || submitting}
+                    disabled={!selectedSchedule || submitting || (hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))}
                     onClick={handleSubmitAppointment}
                     className={`px-6 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-sm ${
-                      selectedSchedule && !submitting
+                      selectedSchedule && !submitting && !(hasPreviousNoShow && (!noShowReason || (noShowReason === "Others" && !noShowCustomReason)))
                         ? "bg-[#007848] text-white hover:bg-[#005f3a] cursor-pointer"
                         : "bg-gray-300 text-white cursor-not-allowed"
                     }`}
@@ -501,6 +929,7 @@ export default function ServicesPage() {
                 </div>
               </SectionCard>
             )}
+            </>)}
           </div>
         </div>
 

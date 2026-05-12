@@ -263,5 +263,6 @@ export const interviewAppointments = pgTable("interview_appointments", {
   department: varchar("department", { length: 255 }),
   course: varchar("course", { length: 255 }),
   status: varchar("status", { length: 50 }).default("pending").notNull(),
+  noShowReason: varchar("no_show_reason", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

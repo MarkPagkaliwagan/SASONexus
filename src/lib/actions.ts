@@ -8,7 +8,7 @@ import {
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
   announcements, interviewSchedules, interviewAppointments
 } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
@@ -571,6 +571,65 @@ export async function deleteInterviewSchedule(id: number) {
   revalidatePath("/portal/admin/interview");
 }
 
+export async function checkStudentNoShow(studentId: string, interviewType: string) {
+  if (!studentId) return null;
+  const existing = await db
+    .select({ id: interviewAppointments.id, interviewType: interviewAppointments.interviewType })
+    .from(interviewAppointments)
+    .where(
+      and(
+        eq(interviewAppointments.studentId, studentId),
+        eq(interviewAppointments.interviewType, interviewType),
+        eq(interviewAppointments.status, "no-show"),
+      ),
+    )
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  return null;
+}
+
+export async function checkStudentAnyNoShow(studentId: string) {
+  if (!studentId) return null;
+  const existing = await db
+    .select({ id: interviewAppointments.id, interviewType: interviewAppointments.interviewType })
+    .from(interviewAppointments)
+    .where(
+      and(
+        eq(interviewAppointments.studentId, studentId),
+        eq(interviewAppointments.status, "no-show"),
+      ),
+    )
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  return null;
+}
+
+export async function fetchStudentDetails(studentId: string) {
+  if (!studentId || studentId.length < 2) return null;
+  const fromStudents = await db
+    .select({
+      fullName: sql<string>`${students.givenName} || ' ' || COALESCE(${students.middleName} || ' ', '') || ${students.familyName}`,
+      email: students.email,
+      contact: students.mobileNo,
+    })
+    .from(students)
+    .where(eq(students.studentId, studentId))
+    .limit(1);
+  if (fromStudents.length > 0) return fromStudents[0];
+  const fromAppointments = await db
+    .select({
+      fullName: interviewAppointments.fullName,
+      email: interviewAppointments.email,
+      contact: interviewAppointments.contact,
+    })
+    .from(interviewAppointments)
+    .where(eq(interviewAppointments.studentId, studentId))
+    .orderBy(desc(interviewAppointments.createdAt))
+    .limit(1);
+  if (fromAppointments.length > 0) return fromAppointments[0];
+  return null;
+}
+
 export async function submitInterviewAppointment(formData: FormData) {
   const scheduleId = parseInt(formData.get("scheduleId") as string);
   const interviewType = formData.get("interviewType") as string;
@@ -585,8 +644,51 @@ export async function submitInterviewAppointment(formData: FormData) {
   const section = formData.get("section") as string;
   const department = formData.get("department") as string;
   const course = formData.get("course") as string;
+  const noShowReason = formData.get("noShowReason") as string;
 
   if (!scheduleId || !fullName) throw new Error("Schedule and full name are required");
+
+  if (studentId && !noShowReason) {
+    const existing = await db
+      .select({ id: interviewAppointments.id })
+      .from(interviewAppointments)
+      .where(
+        and(
+          eq(interviewAppointments.studentId, studentId),
+          eq(interviewAppointments.interviewType, interviewType),
+          eq(interviewAppointments.status, "pending"),
+        ),
+      )
+      .limit(1);
+    if (existing.length > 0) throw new Error("You already have a pending appointment for this interview type.");
+  }
+
+  if (noShowReason && studentId) {
+    const prevNoShow = await db
+      .select({ id: interviewAppointments.id, scheduleId: interviewAppointments.scheduleId })
+      .from(interviewAppointments)
+      .where(
+        and(
+          eq(interviewAppointments.studentId, studentId),
+          eq(interviewAppointments.interviewType, interviewType),
+          eq(interviewAppointments.status, "no-show"),
+        ),
+      )
+      .limit(1);
+
+    if (prevNoShow.length > 0) {
+      await db.update(interviewAppointments)
+        .set({ noShowReason, status: "rescheduled" })
+        .where(eq(interviewAppointments.id, prevNoShow[0].id));
+
+      const oldSchedule = await db.select().from(interviewSchedules).where(eq(interviewSchedules.id, prevNoShow[0].scheduleId)).limit(1);
+      if (oldSchedule[0]) {
+        await db.update(interviewSchedules)
+          .set({ booked: sql`${interviewSchedules.booked} - 1` })
+          .where(eq(interviewSchedules.id, prevNoShow[0].scheduleId));
+      }
+    }
+  }
 
   await db.insert(interviewAppointments).values({
     scheduleId, interviewType, studentType, academicLevel,
@@ -610,5 +712,38 @@ export async function updateInterviewAppointmentStatus(id: number, status: strin
   await db.update(interviewAppointments)
     .set({ status })
     .where(eq(interviewAppointments.id, id));
+  revalidatePath("/portal/admin/interview");
+}
+
+export async function markNoShowWithReason(id: number, reason: string, newScheduleId?: number) {
+  await db.update(interviewAppointments)
+    .set({ status: "no-show", noShowReason: reason })
+    .where(eq(interviewAppointments.id, id));
+
+  if (newScheduleId) {
+    const original = await db.select().from(interviewAppointments).where(eq(interviewAppointments.id, id)).limit(1);
+    if (original[0]) {
+      await db.insert(interviewAppointments).values({
+        scheduleId: newScheduleId,
+        interviewType: original[0].interviewType,
+        studentType: original[0].studentType,
+        academicLevel: original[0].academicLevel,
+        fullName: original[0].fullName,
+        studentId: original[0].studentId,
+        email: original[0].email,
+        contact: original[0].contact,
+        gradeLevel: original[0].gradeLevel,
+        strand: original[0].strand,
+        section: original[0].section,
+        department: original[0].department,
+        course: original[0].course,
+        status: "rescheduled",
+      });
+      await db.update(interviewSchedules)
+        .set({ booked: sql`${interviewSchedules.booked} + 1` })
+        .where(eq(interviewSchedules.id, newScheduleId));
+    }
+  }
+
   revalidatePath("/portal/admin/interview");
 }
