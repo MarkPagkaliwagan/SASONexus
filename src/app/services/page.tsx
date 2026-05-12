@@ -215,7 +215,7 @@ export default function ServicesPage() {
     setShowSuggestions(false);
     if (interviewType && s.studentId) {
       checkStudentNoShow(s.studentId, interviewType).then((hasNoShow) => {
-        setHasPreviousNoShow(hasNoShow);
+        setHasPreviousNoShow(!!hasNoShow);
         if (!hasNoShow) {
           setNoShowReason("");
           setNoShowCustomReason("");
