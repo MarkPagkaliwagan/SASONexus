@@ -19,51 +19,32 @@ const units = [
 ];
 
 const ModalProgress = ({ step, stepLabels, progressPercent }: { step: number; stepLabels: string[]; progressPercent: number }) => (
-  <>
-    <div className="hidden md:flex flex-col gap-0">
-      {stepLabels.map((label, i) => {
-        const n = i + 1;
-        const isCurrent = step === n;
-        const isDone = step > n;
-        return (
-          <div key={label} className="flex items-start gap-4">
-            <div className="flex flex-col items-center">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shrink-0 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848] text-white" : "bg-gray-100 text-gray-400"}`}>
-                {isDone ? <FaCheck className="text-xs" /> : n}
-              </div>
-              {i < stepLabels.length - 1 && (
-                <div className={`w-0.5 h-10 transition-colors duration-300 ${isDone ? "bg-[#007848]" : "bg-gray-200"}`} />
-              )}
+  <div className="flex md:flex-col gap-0 md:gap-0">
+    {stepLabels.map((label, i) => {
+      const n = i + 1;
+      const isCurrent = step === n;
+      const isDone = step > n;
+      return (
+        <div key={label} className="flex items-center gap-2 md:gap-4 md:items-start flex-1 md:flex-none">
+          <div className="flex flex-col items-center">
+            <div className={`w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold transition-all duration-300 shrink-0 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848] text-white" : "bg-gray-100 text-gray-400"}`}>
+              {isDone ? <FaCheck className="text-[8px] md:text-xs" /> : n}
             </div>
-            <div className={`pt-1.5 transition-all duration-300 ${isCurrent ? "opacity-100" : isDone ? "opacity-60" : "opacity-40"}`}>
-              <p className={`text-sm font-semibold ${isCurrent ? "text-[#007848]" : "text-gray-600"}`}>{label}</p>
-              <p className="text-xs text-gray-400">{isCurrent ? "In progress" : isDone ? "Completed" : "Pending"}</p>
-            </div>
+            {i < stepLabels.length - 1 && (
+              <div className={`w-0.5 h-6 md:h-10 transition-colors duration-300 hidden md:block ${isDone ? "bg-[#007848]" : "bg-gray-200"}`} />
+            )}
           </div>
-        );
-      })}
-    </div>
-    <div className="md:hidden mb-6">
-      <div className="flex items-center justify-between px-1">
-        {stepLabels.map((label, i) => {
-          const n = i + 1;
-          const isCurrent = step === n;
-          const isDone = step > n;
-          return (
-            <div key={label} className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${isCurrent ? "bg-[#007848] text-white shadow-lg shadow-[#007848]/30 scale-110" : isDone ? "bg-[#007848]/20 text-[#007848]" : "bg-gray-100 text-gray-400"}`}>
-                {isDone ? <FaCheck className="text-xs" /> : n}
-              </div>
-              <span className="text-[10px] mt-1 font-medium transition-colors text-gray-500">{label}</span>
-            </div>
-          );
-        })}
-      </div>
-      <div className="relative h-1.5 bg-gray-100 rounded-full mt-3 mx-1 overflow-hidden">
-        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }} />
-      </div>
-    </div>
-  </>
+          <div className={`pt-0 md:pt-1.5 transition-all duration-300 ${isCurrent ? "opacity-100" : isDone ? "opacity-60" : "opacity-40"}`}>
+            <p className={`text-xs md:text-sm font-semibold ${isCurrent ? "text-[#007848]" : "text-gray-600"}`}>{label}</p>
+            <p className="text-[10px] md:text-xs text-gray-400 hidden md:block">{isCurrent ? "In progress" : isDone ? "Completed" : "Pending"}</p>
+          </div>
+          {i < stepLabels.length - 1 && (
+            <div className={`w-6 md:hidden h-0.5 self-center transition-colors duration-300 ${isDone ? "bg-[#007848]" : "bg-gray-200"}`} />
+          )}
+        </div>
+      );
+    })}
+  </div>
 );
 
 const SectionCard = ({ children }: { children: React.ReactNode }) => (
@@ -514,17 +495,14 @@ export default function ServicesPage() {
           </div>
 
           <div className="flex flex-col md:flex-row h-full max-h-[calc(95vh-68px)] md:max-h-[calc(90vh-68px)] overflow-hidden">
-            <div className="md:w-56 md:min-w-56 bg-gray-50/80 md:border-r border-gray-200 p-5 md:p-6 md:overflow-y-auto hidden md:block">
+            <div className="md:w-56 md:min-w-56 bg-gray-50/80 md:border-r border-gray-200 p-5 md:p-6 md:overflow-y-auto">
               <ModalProgress step={step} stepLabels={stepLabels} progressPercent={progressPercent} />
-              <div className="mt-6 p-3 bg-white rounded-xl border border-gray-100">
+              <div className="mt-6 p-3 bg-white rounded-xl border border-gray-100 hidden md:block">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Need help?</p>
                 <p className="text-xs text-gray-400">Contact GCSU at the EALA Building - Second Floor</p>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 md:p-8">
-              <div className="md:hidden mb-2">
-                <ModalProgress step={step} stepLabels={stepLabels} progressPercent={progressPercent} />
-              </div>
             {showConfirmation && confirmedData ? (
               <div>
                 <div id="confirmation-card" className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-lg">
