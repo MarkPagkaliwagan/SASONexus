@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
   FaUserFriends, FaUsers, FaClinicMedical, FaChurch, FaRunning,
-  FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock, FaExclamationCircle
+  FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock, FaExclamationCircle, FaChevronDown, FaFolder, FaClipboardList
 } from "react-icons/fa";
 import { submitInterviewAppointment, checkStudentNoShow, checkStudentAnyNoShow, fetchStudentDetails } from "@/lib/actions";
 import { jsPDF } from "jspdf";
@@ -132,6 +132,7 @@ export default function ServicesPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedData, setConfirmedData] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const clearError = (field: string) => setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
 
@@ -1007,19 +1008,47 @@ export default function ServicesPage() {
                        <h3 className="text-xl font-bold text-gray-800">Guidance and Career Services Unit</h3>
                        <p className="text-xs text-gray-500 font-medium tracking-wider">GCSU</p>
                      </div>
-                     <div className="flex flex-col gap-2 w-full sm:w-auto">
-                       <button
-                         onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setShowModal(true); }, 600); }}
-                         disabled={loading}
-                         className="px-4 py-1.5 bg-[#007848] text-white text-xs font-medium rounded-md hover:bg-[#005f3a] transition-colors cursor-pointer whitespace-nowrap border border-[#007848] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                       >
-                         {loading ? (
-                           <><svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Loading...</>
-                         ) : (
-                           <><FaClock className="text-[10px]" /> Schedule for Interview</>
-                         )}
-                       </button>
-                     </div>
+                      <div className="flex flex-col gap-2 w-full sm:w-auto relative">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setShowModal(true); }, 600); }}
+                            disabled={loading}
+                            className="px-4 py-1.5 bg-[#007848] text-white text-xs font-medium rounded-md hover:bg-[#005f3a] transition-colors cursor-pointer whitespace-nowrap border border-[#007848] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                          >
+                            {loading ? (
+                              <><svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Loading...</>
+                            ) : (
+                              <><FaClock className="text-[10px]" /> Schedule for Interview</>
+                            )}
+                          </button>
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowDropdown(!showDropdown)}
+                              className="px-3 py-1.5 bg-[#007848] text-white text-xs font-medium rounded-md hover:bg-[#005f3a] transition-colors cursor-pointer border border-[#007848] flex items-center gap-1.5"
+                            >
+                              <FaFolder className="text-[10px]" /> Forms <FaChevronDown className="text-[8px]" />
+                            </button>
+                            {showDropdown && (
+                              <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                <button
+                                  onClick={() => { setShowDropdown(false); }}
+                                  className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#007848]/5 hover:text-[#007848] transition-colors cursor-pointer border-b border-gray-100 flex items-center gap-3"
+                                >
+                                  <FaFolder className="text-[#007848] text-xs" />
+                                  Cumulative Record Folder
+                                </button>
+                                <button
+                                  onClick={() => { setShowDropdown(false); }}
+                                  className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#007848]/5 hover:text-[#007848] transition-colors cursor-pointer flex items-center gap-3"
+                                >
+                                  <FaClipboardList className="text-[#007848] text-xs" />
+                                  Student Needs Assessment
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                    </div>
                   <p className="text-gray-600 leading-relaxed mb-4 text-sm">
                     Facilitates the process of acquiring the self-actualization of the student in his/her pursuit of becoming a fully functioning individual blessed with intellectual, emotional, spiritual, and social strengths.
