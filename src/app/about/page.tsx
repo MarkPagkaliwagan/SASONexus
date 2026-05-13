@@ -1,9 +1,13 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { db } from "@/db";
+import { sasoUnits, staffAccounts, positions } from "@/db/schema";
+import { eq, and, asc } from "drizzle-orm";
 import {
   FaGraduationCap, FaEye, FaBullseye, FaHeart, FaHandshake,
   FaSearch, FaLightbulb, FaUserFriends, FaUsers, FaClinicMedical,
-  FaChurch, FaRunning, FaMapMarkerAlt, FaClock, FaEnvelope, FaPhone
+  FaChurch, FaRunning, FaMapMarkerAlt, FaClock, FaEnvelope, FaPhone,
+  FaEnvelope as FaEnvelopeIcon, FaPhoneAlt
 } from "react-icons/fa";
 
 const goals = [
@@ -13,14 +17,6 @@ const goals = [
   { title: "Recommendations", desc: "To recommend changes and improvements to students' extra and co-curricular activities.", icon: FaLightbulb },
 ];
 
-const units = [
-  { name: "Guidance Office", icon: FaUserFriends },
-  { name: "Student Formation and Development Unit (SFDU)", icon: FaUsers },
-  { name: "School Clinic", icon: FaClinicMedical },
-  { name: "Campus Ministry", icon: FaChurch },
-  { name: "Sports Development Unit", icon: FaRunning },
-];
-
 const officeInfo = [
   { label: "Location", value: ["Student Affairs Office, Second Floor", "Eala Building"], icon: FaMapMarkerAlt },
   { label: "Office Hours", value: ["Monday - Saturday", "8:00 AM - 5:00 PM"], icon: FaClock },
@@ -28,7 +24,40 @@ const officeInfo = [
   { label: "Phone", value: ["(049) 123-4567 loc. 205"], icon: FaPhone },
 ];
 
-export default function AboutPage() {
+async function getUnitsWithStaff() {
+  const units = await db
+    .select()
+    .from(sasoUnits)
+    .orderBy(asc(sasoUnits.name));
+
+  const result = [];
+  for (const unit of units) {
+    const staff = await db
+      .select({
+        id: staffAccounts.id,
+        name: staffAccounts.name,
+        email: staffAccounts.email,
+        avatarUrl: staffAccounts.avatarUrl,
+        positionName: positions.name,
+      })
+      .from(staffAccounts)
+      .leftJoin(positions, eq(staffAccounts.positionId, positions.id))
+      .where(
+        and(
+          eq(staffAccounts.unitId, unit.id),
+          eq(staffAccounts.isActive, true),
+        ),
+      )
+      .orderBy(asc(staffAccounts.name));
+
+    result.push({ ...unit, staff });
+  }
+  return result;
+}
+
+export default async function AboutPage() {
+  const unitsWithStaff = await getUnitsWithStaff();
+
   return (
     <>
       <Navbar />
@@ -41,17 +70,17 @@ export default function AboutPage() {
             }} />
           </div>
           <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-24 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full mb-6 animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
               <FaGraduationCap className="text-green-200 text-lg" />
               <span className="text-green-200 text-sm font-semibold uppercase tracking-widest">San Pablo Colleges</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight animate-fade-in">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
               Student Affairs and <br className="hidden md:block" />Services Office
             </h1>
-            <p className="text-green-100 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed animate-fade-in">
+            <p className="text-green-100 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
               The Student Affairs and Services Office — dedicated to your holistic development and success.
             </p>
-            <div className="mt-8 flex justify-center gap-3 animate-fade-in">
+            <div className="mt-8 flex justify-center gap-3">
               <span className="w-2 h-2 bg-green-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
               <span className="w-2 h-2 bg-green-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
               <span className="w-2 h-2 bg-green-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -120,16 +149,45 @@ export default function AboutPage() {
 
             <div>
               <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Units of SASO</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Units of SASO and Personnel</h2>
                 <div className="w-16 h-1 bg-[#007848] mx-auto rounded-full" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {units.map(({ name, icon: Icon }) => (
-                  <div key={name} className="group flex items-center gap-4 p-5 bg-white rounded-xl border border-gray-100 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-                    <div className="p-3 bg-[#007848]/10 rounded-xl group-hover:bg-[#007848] transition-colors duration-300">
-                      <Icon className="text-lg text-[#007848] group-hover:text-white transition-colors duration-300" />
+              <div className="space-y-8">
+                {unitsWithStaff.map((unit) => (
+                  <div key={unit.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-[#007848]/5 to-[#00a864]/5 border-b border-gray-100">
+                      <div className="p-2.5 bg-[#007848]/10 rounded-xl">
+                        <FaUsers className="text-lg text-[#007848]" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-800">{unit.name}</h3>
                     </div>
-                    <span className="text-gray-700 font-medium group-hover:text-[#007848] transition-colors duration-300">{name}</span>
+                    {unit.staff.length > 0 ? (
+                      <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {unit.staff.map((person) => (
+                          <div key={person.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-md hover:border-[#007848]/20 transition-all duration-300">
+                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#007848]/10 flex items-center justify-center shrink-0">
+                              {person.avatarUrl ? (
+                                <img src={person.avatarUrl} alt={person.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-sm font-bold text-[#007848]">{person.name.charAt(0)}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-gray-800 truncate">{person.name}</p>
+                              <p className="text-xs text-[#007848] font-medium truncate">{person.positionName || "Staff"}</p>
+                              <div className="flex items-center gap-1 mt-1">
+                                <FaEnvelopeIcon className="text-[10px] text-gray-400" />
+                                <span className="text-[11px] text-gray-500 truncate">{person.email}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <p className="text-sm text-gray-400">No personnel assigned yet</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

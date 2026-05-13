@@ -9,7 +9,7 @@ import { FiGrid, FiUsers, FiBookOpen, FiFileText, FiVolume2, FiMenu, FiX, FiChev
 
 const navItems = [
   { href: "/portal/admin", label: "Dashboard", icon: FiGrid },
-  { href: "/portal/admin/staff", label: "Staff Management", icon: FiUsers },
+  { href: "/portal/admin/staff", label: "Personnel Management", icon: FiUsers },
   { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2 },
   { href: "/portal/admin/admission/pre-admissions", label: "Application", icon: FiFileText },
   { href: "/portal/admin/admission", label: "Admission", icon: FiBookOpen },
