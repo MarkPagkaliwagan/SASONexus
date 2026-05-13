@@ -266,3 +266,23 @@ export const interviewAppointments = pgTable("interview_appointments", {
   noShowReason: varchar("no_show_reason", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const personnel = pgTable("personnel", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  position: varchar("position", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  contact: varchar("contact", { length: 100 }),
+  avatarUrl: text("avatar_url"),
+  unitId: integer("unit_id").references(() => sasoUnits.id, { onDelete: "cascade" }),
+  isHead: boolean("is_head").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const personnelRelations = relations(personnel, ({ one }) => ({
+  unit: one(sasoUnits, {
+    fields: [personnel.unitId],
+    references: [sasoUnits.id],
+  }),
+}));

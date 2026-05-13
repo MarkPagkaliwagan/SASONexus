@@ -6,9 +6,9 @@ import { db } from "@/db";
 import {
   staffAccounts, preAdmissions, students,
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
-  announcements, interviewSchedules, interviewAppointments
+  announcements, interviewSchedules, interviewAppointments, personnel
 } from "@/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, ne, and, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
@@ -746,4 +746,108 @@ export async function markNoShowWithReason(id: number, reason: string, newSchedu
   }
 
   revalidatePath("/portal/admin/interview");
+}
+
+// ── Personnel ──
+
+export async function createPersonnel(formData: FormData) {
+  await requireAdmin();
+
+  const name = formData.get("name") as string;
+  const position = formData.get("position") as string;
+  const email = formData.get("email") as string;
+  const contact = formData.get("contact") as string;
+  const unitIdStr = formData.get("unitId") as string;
+  const unitId = unitIdStr ? parseInt(unitIdStr) : null;
+  const isHead = formData.get("isHead") === "on";
+  const avatar = formData.get("avatar") as File | null;
+
+  if (!name) {
+    throw new Error("Name is required");
+  }
+
+  if (!isHead && !unitId) {
+    throw new Error("Unit is required for non-head personnel");
+  }
+
+  if (isHead) {
+    await db.update(personnel).set({ isHead: false }).where(eq(personnel.isHead, true));
+  }
+
+  let avatarUrl: string | null = null;
+  if (avatar && avatar.size > 0 && avatar.size < 2 * 1024 * 1024) {
+    const buffer = Buffer.from(await avatar.arrayBuffer());
+    avatarUrl = `data:${avatar.type};base64,${buffer.toString("base64")}`;
+  }
+
+  await db.insert(personnel).values({
+    name,
+    position: position || null,
+    email: email || null,
+    contact: contact || null,
+    unitId,
+    isHead,
+    avatarUrl,
+  });
+
+  revalidatePath("/portal/admin/personnel");
+}
+
+export async function deactivatePersonnel(id: number) {
+  await requireAdmin();
+  await db.update(personnel).set({ isActive: false }).where(eq(personnel.id, id));
+  revalidatePath("/portal/admin/personnel");
+}
+
+export async function activatePersonnel(id: number) {
+  await requireAdmin();
+  await db.update(personnel).set({ isActive: true }).where(eq(personnel.id, id));
+  revalidatePath("/portal/admin/personnel");
+}
+
+export async function deletePersonnel(id: number) {
+  await requireAdmin();
+  await db.delete(personnel).where(eq(personnel.id, id));
+  revalidatePath("/portal/admin/personnel");
+}
+
+export async function updatePersonnel(formData: FormData) {
+  await requireAdmin();
+
+  const id = parseInt(formData.get("id") as string);
+  const name = formData.get("name") as string;
+  const position = formData.get("position") as string;
+  const email = formData.get("email") as string;
+  const contact = formData.get("contact") as string;
+  const unitId = parseInt(formData.get("unitId") as string);
+  const isHead = formData.get("isHead") === "on";
+  const avatar = formData.get("avatar") as File | null;
+
+  if (!id || !name || !unitId) {
+    throw new Error("ID, name, and unit are required");
+  }
+
+  if (isHead) {
+    await db.update(personnel).set({ isHead: false }).where(and(eq(personnel.isHead, true), ne(personnel.id, id)));
+  }
+
+  let avatarUrl: string | null | undefined = undefined;
+  if (avatar && avatar.size > 0 && avatar.size < 2 * 1024 * 1024) {
+    const buffer = Buffer.from(await avatar.arrayBuffer());
+    avatarUrl = `data:${avatar.type};base64,${buffer.toString("base64")}`;
+  }
+
+  await db.update(personnel)
+    .set({
+      name,
+      position: position || null,
+      email: email || null,
+      contact: contact || null,
+      unitId,
+      isHead,
+      ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+    })
+    .where(eq(personnel.id, id));
+
+  revalidatePath("/portal/admin/personnel");
 }

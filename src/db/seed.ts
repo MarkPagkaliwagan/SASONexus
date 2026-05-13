@@ -25,6 +25,7 @@ async function seed() {
     { name: "Guidance Counselor", unitId: units[0].id },
     { name: "Psychometrician", unitId: units[0].id },
     { name: "Guidance Staff", unitId: units[0].id },
+    { name: "Guidance Associate", unitId: units[0].id },
     { name: "Director of SFDU", unitId: units[1].id },
     { name: "Student Formation Coordinator", unitId: units[1].id },
     { name: "Organization Adviser", unitId: units[1].id },
