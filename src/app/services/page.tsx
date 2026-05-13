@@ -565,8 +565,7 @@ export default function ServicesPage() {
               </div>
             ) : (
             <>
-            <ModalProgress step={step} stepLabels={stepLabels} progressPercent={progressPercent} />
-
+            
             {step === 1 && (
               <SectionCard>
                 <div className="relative mb-5">
