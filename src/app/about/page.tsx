@@ -186,75 +186,71 @@ export default async function AboutPage() {
               <div className="mb-28">
                 <div className="text-center mb-16">
                   <span className="text-[#007848] text-sm font-semibold uppercase tracking-[0.2em]">Leadership</span>
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-3 mb-4">Office Head</h2>
+                  <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-3 mb-4">SASO Head</h2>
                   <div className="w-16 h-1 bg-[#007848] mx-auto rounded-full" />
                 </div>
                 <div className="max-w-5xl mx-auto">
-                  <div className="relative bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-[#007848]/[0.03] to-transparent rounded-full -mr-32 -mt-32 pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-[#00a864]/[0.03] to-transparent rounded-full -ml-24 -mb-24 pointer-events-none" />
-                    <div className="relative p-8 md:p-12">
-                      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-10 md:gap-14">
-                        <div className="shrink-0 flex flex-col items-center md:items-start">
-                          <div className="relative md:-mt-4">
-                            <div className="relative">
-                              <div className="w-48 h-48 md:w-52 md:h-52 rounded-3xl overflow-hidden shadow-xl ring-[6px] ring-white">
-                                {sasoHead.avatarUrl ? (
-                                  <img src={sasoHead.avatarUrl} alt={sasoHead.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center">
-                                    <span className="text-7xl font-bold text-gray-300">{sasoHead.name.charAt(0)}</span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="absolute -bottom-3 -right-3 bg-white rounded-2xl shadow-lg border border-gray-100 px-5 py-2.5 flex items-center gap-2.5">
-                                <div className="w-2 h-2 rounded-full bg-[#007848] animate-pulse" />
-                                <span className="text-sm font-bold text-gray-700">{sasoHead.positionName || "SASO Head"}</span>
-                              </div>
-                            </div>
+                  <div className="relative bg-white rounded-3xl shadow-lg shadow-gray-200/50 border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-500">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-[#007848]/[0.04] to-transparent rounded-full -mr-32 -mt-32 pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-[#00a864]/[0.04] to-transparent rounded-full -ml-24 -mb-24 pointer-events-none" />
+                    <div className="relative flex flex-col md:flex-row">
+                      <div className="md:w-80 shrink-0 h-72 md:h-auto overflow-hidden relative">
+                        {sasoHead.avatarUrl ? (
+                          <>
+                            <img src={sasoHead.avatarUrl} alt={sasoHead.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                          </>
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[#007848]/5 to-[#00a864]/5 flex items-center justify-center">
+                            <span className="text-9xl font-bold text-[#007848]/10">{sasoHead.name.charAt(0)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 p-8 md:p-10 lg:p-12 flex flex-col justify-center">
+                        <div className="space-y-1 mb-6">
+                          <span className="inline-flex items-center gap-2 text-xs text-[#007848] font-semibold uppercase tracking-[0.2em]">
+                            <span className="w-4 h-[2px] bg-[#007848] rounded-full" />
+                            Office of the
+                          </span>
+                          <h3 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight leading-tight">{sasoHead.name}</h3>
+                          <div className="flex items-center gap-3 pt-1.5">
+                            <div className="h-[3px] w-8 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full" />
+                            <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#007848]/5 text-[#007848] border border-[#007848]/10">
+                              {sasoHead.positionName || "SASO Head"}
+                            </span>
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                          <div className="space-y-1 mb-5">
-                            <span className="text-xs text-[#007848] font-semibold uppercase tracking-[0.2em]">Office of the</span>
-                            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight leading-tight">{sasoHead.name}</h3>
-                            <div className="flex items-center gap-3 pt-1">
-                              <div className="h-[3px] w-8 bg-gradient-to-r from-[#007848] to-[#00a864] rounded-full" />
-                              <span className="text-sm text-gray-400 font-medium">{sasoHead.positionName || "SASO Head"}</span>
-                            </div>
-                          </div>
-                          <div className="relative pl-6 border-l-2 border-gray-100">
-                            <div className="absolute left-0 top-0 w-2 h-2 rounded-full bg-[#007848] -translate-x-[5px]" />
-                            <p className="text-gray-500 leading-relaxed text-[15px]">
-                              The SASO Head oversees the strategic direction and daily operations of the Student Affairs
-                              and Services Office, ensuring that all units deliver quality support services aligned with
-                              the institution&apos;s mission and Catholic Christian values.
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-5 mt-7 pt-6 border-t border-gray-100">
-                            {sasoHead.email && (
-                              <a href={`mailto:${sasoHead.email}`} className="group flex items-center gap-3.5">
-                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#007848]/5 to-[#00a864]/5 flex items-center justify-center group-hover:from-[#007848] group-hover:to-[#00a864] transition-all duration-300 shadow-sm">
-                                  <FaEnvelopeIcon className="text-sm text-[#007848] group-hover:text-white transition-colors duration-300" />
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-[0.12em]">Email</p>
-                                  <p className="text-sm text-gray-600 group-hover:text-[#007848] transition-colors">{sasoHead.email}</p>
-                                </div>
-                              </a>
-                            )}
-                            {sasoHead.contact && (
-                              <a href={`tel:${sasoHead.contact}`} className="group flex items-center gap-3.5">
-                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#007848]/5 to-[#00a864]/5 flex items-center justify-center group-hover:from-[#007848] group-hover:to-[#00a864] transition-all duration-300 shadow-sm">
-                                  <FaPhoneAlt className="text-sm text-[#007848] group-hover:text-white transition-colors duration-300" />
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-[0.12em]">Contact</p>
-                                  <p className="text-sm text-gray-600 group-hover:text-[#007848] transition-colors">{sasoHead.contact}</p>
-                                </div>
-                              </a>
-                            )}
-                          </div>
+                        <div className="relative pl-6 border-l-2 border-gray-100 mb-6">
+                          <div className="absolute left-0 top-1 w-2 h-2 rounded-full bg-[#007848] -translate-x-[5px] ring-2 ring-[#007848]/10" />
+                          <p className="text-gray-500 leading-relaxed text-[15px]">
+                            The SASO Head oversees the strategic direction and daily operations of the Student Affairs
+                            and Services Office, ensuring that all units deliver quality support services aligned with
+                            the institution&apos;s mission and Catholic Christian values.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-5 pt-6 border-t border-gray-100">
+                          {sasoHead.email && (
+                            <a href={`mailto:${sasoHead.email}`} className="group/contact flex items-center gap-3.5">
+                              <div className="w-11 h-11 rounded-xl bg-[#007848]/5 flex items-center justify-center group-hover/contact:bg-[#007848] transition-all duration-300">
+                                <FaEnvelopeIcon className="text-sm text-[#007848] group-hover/contact:text-white transition-colors duration-300" />
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-[0.12em]">Email</p>
+                                <p className="text-sm text-gray-600 group-hover/contact:text-[#007848] transition-colors">{sasoHead.email}</p>
+                              </div>
+                            </a>
+                          )}
+                          {sasoHead.contact && (
+                            <a href={`tel:${sasoHead.contact}`} className="group/contact flex items-center gap-3.5">
+                              <div className="w-11 h-11 rounded-xl bg-[#007848]/5 flex items-center justify-center group-hover/contact:bg-[#007848] transition-all duration-300">
+                                <FaPhoneAlt className="text-sm text-[#007848] group-hover/contact:text-white transition-colors duration-300" />
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-[0.12em]">Contact</p>
+                                <p className="text-sm text-gray-600 group-hover/contact:text-[#007848] transition-colors">{sasoHead.contact}</p>
+                              </div>
+                            </a>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -266,8 +262,8 @@ export default async function AboutPage() {
             {/* ── UNITS & PERSONNEL ── */}
             <div>
               <div className="text-center mb-12">
-                <span className="text-[#007848] text-sm font-semibold uppercase tracking-[0.2em]">Our Team</span>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-3 mb-4">Units &amp; Personnel</h2>
+                <span className="text-[#007848] text-sm font-semibold uppercase tracking-[0.2em]">Per Unit</span>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-3 mb-4">Personnel</h2>
                 <div className="w-16 h-1 bg-[#007848] mx-auto rounded-full" />
               </div>
               <div className="space-y-6">

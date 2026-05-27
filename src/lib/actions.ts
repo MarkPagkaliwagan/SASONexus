@@ -6,9 +6,10 @@ import { db } from "@/db";
 import {
   staffAccounts, preAdmissions, students,
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
-  announcements, interviewSchedules, interviewAppointments, personnel
+  announcements, interviewSchedules, interviewAppointments, personnel,
+  cumulativeRecords, verificationCodes, studentNeedsAssessment, handbooksPillars,
 } from "@/db/schema";
-import { eq, ne, and, desc, sql } from "drizzle-orm";
+import { eq, ne, and, or, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
@@ -760,7 +761,7 @@ export async function createPersonnel(formData: FormData) {
   const unitIdStr = formData.get("unitId") as string;
   const unitId = unitIdStr ? parseInt(unitIdStr) : null;
   const isHead = formData.get("isHead") === "on";
-  const avatar = formData.get("avatar") as File | null;
+  const avatarDataUrl = formData.get("avatarDataUrl") as string | null;
 
   if (!name) {
     throw new Error("Name is required");
@@ -775,9 +776,8 @@ export async function createPersonnel(formData: FormData) {
   }
 
   let avatarUrl: string | null = null;
-  if (avatar && avatar.size > 0 && avatar.size < 2 * 1024 * 1024) {
-    const buffer = Buffer.from(await avatar.arrayBuffer());
-    avatarUrl = `data:${avatar.type};base64,${buffer.toString("base64")}`;
+  if (avatarDataUrl) {
+    avatarUrl = avatarDataUrl;
   }
 
   await db.insert(personnel).values({
@@ -811,6 +811,181 @@ export async function deletePersonnel(id: number) {
   revalidatePath("/portal/admin/personnel");
 }
 
+// ── Cumulative Record ──
+
+export async function getCrfFormData() {
+  const [years, courses, strands] = await Promise.all([
+    db.query.academicYears.findMany({
+      where: (y, { eq }) => eq(y.isActive, true),
+      orderBy: (y, { desc }) => [desc(y.year)],
+    }),
+    db.query.collegeCourses.findMany({
+      where: (c, { eq }) => eq(c.isActive, true),
+      orderBy: (c, { asc }) => [asc(c.name)],
+    }),
+    db.query.shsStrands.findMany({
+      where: (s, { eq }) => eq(s.isActive, true),
+      orderBy: (s, { asc }) => [asc(s.name)],
+    }),
+  ]);
+  return { years, courses, strands };
+}
+
+export async function lookupStudentByStudentId(studentId: string) {
+  if (!studentId || studentId.length < 2) return null;
+  const fromStudents = await db
+    .select({
+      id: students.id,
+      studentId: students.studentId,
+      familyName: students.familyName,
+      givenName: students.givenName,
+      middleName: students.middleName,
+      email: students.email,
+      applicationLevel: students.applicationLevel,
+      gradeLevel: students.gradeLevel,
+      academicYear: students.academicYear,
+    })
+    .from(students)
+    .where(eq(students.studentId, studentId))
+    .limit(1);
+  if (fromStudents[0]) return fromStudents[0];
+  const fromRecords = await db
+    .select({
+      id: cumulativeRecords.id,
+      studentId: cumulativeRecords.schoolId,
+      familyName: cumulativeRecords.fullName,
+      givenName: cumulativeRecords.fullName,
+      middleName: sql<string>`NULL`,
+      email: cumulativeRecords.email,
+      applicationLevel: sql<string>`NULL`,
+      gradeLevel: sql<string>`NULL`,
+      academicYear: cumulativeRecords.academicYear,
+    })
+    .from(cumulativeRecords)
+    .where(eq(cumulativeRecords.schoolId, studentId))
+    .limit(1);
+  return fromRecords[0] || null;
+}
+
+export async function lookupStudentForSna(studentId: string) {
+  if (!studentId || studentId.length < 2) return null;
+  const fromSna = await db
+    .select({
+      id: studentNeedsAssessment.id,
+      studentId: studentNeedsAssessment.studentId,
+      schoolId: studentNeedsAssessment.schoolId,
+      fullName: studentNeedsAssessment.fullName,
+      email: studentNeedsAssessment.email,
+      contact: studentNeedsAssessment.contactNumber,
+      academicYear: studentNeedsAssessment.academicYear,
+      department: studentNeedsAssessment.department,
+      courseOrStrand: studentNeedsAssessment.courseOrStrand,
+    })
+    .from(studentNeedsAssessment)
+    .where(or(
+      eq(studentNeedsAssessment.schoolId, studentId),
+      eq(studentNeedsAssessment.studentId, studentId),
+    ))
+    .limit(1);
+  return fromSna[0] || null;
+}
+
+export async function sendCumulativeRecordCode(email: string, studentId: string) {
+  if (!email) throw new Error("Email is required");
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const { sendVerificationCode } = await import("@/lib/email");
+  await sendVerificationCode(email, code);
+  await db.insert(verificationCodes).values({ email, code, expiresAt });
+  return true;
+}
+
+export async function verifyCumulativeRecordCode(email: string, code: string) {
+  if (!email || !code) throw new Error("Email and code are required");
+  const [record] = await db
+    .select()
+    .from(verificationCodes)
+    .where(and(eq(verificationCodes.email, email), eq(verificationCodes.code, code), eq(verificationCodes.used, false)))
+    .orderBy(desc(verificationCodes.createdAt))
+    .limit(1);
+  if (!record) throw new Error("Invalid code");
+  if (new Date() > record.expiresAt) throw new Error("Code has expired. Please request a new one.");
+  await db.update(verificationCodes).set({ used: true }).where(eq(verificationCodes.id, record.id));
+  return true;
+}
+
+export async function getCumulativeRecord(studentId: string) {
+  if (!studentId) return null;
+  const [record] = await db
+    .select()
+    .from(cumulativeRecords)
+    .where(
+      or(
+        eq(cumulativeRecords.studentId, studentId),
+        eq(cumulativeRecords.schoolId, studentId),
+      ),
+    )
+    .orderBy(desc(cumulativeRecords.updatedAt))
+    .limit(1);
+  return record || null;
+}
+
+export async function saveCumulativeRecord(formData: FormData) {
+  const fields: Record<string, string | null> = {};
+  const textFields = [
+    "studentId", "academicYear", "department", "schoolId",
+    "fullName", "address", "contactNumber", "email",
+    "birthday", "age", "nationality",
+    "elemSchool", "elemYear", "jhsSchool", "jhsYear",
+    "shsSchool", "shsYear", "collegeProgram", "collegeYearLevel",
+    "courseOrStrand",
+    "parentName", "parentRelationship", "parentContact",
+    "emergencyPerson", "emergencyRelationship", "emergencyContact",
+  ];
+  for (const key of textFields) {
+    const val = formData.get(key);
+    fields[key] = typeof val === "string" ? val : null;
+  }
+  if (fields["courseOrStrand"] && !fields["collegeProgram"]) {
+    fields["collegeProgram"] = fields["courseOrStrand"];
+  }
+  const uploadFields = [
+    "corUpload", "enrollmentFormUpload", "admissionRecordUpload",
+    "reportCardUpload", "torUpload", "subjectLoadUpload",
+    "psaBirthCertUpload", "idPictureUpload", "schoolIdUpload",
+    "goodMoralUpload", "conductRecordUpload",
+  ];
+  for (const key of uploadFields) {
+    const file = formData.get(key) as File | null;
+    if (file && file.size > 0 && file.size < 5 * 1024 * 1024) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      fields[key] = `data:${file.type};base64,${buffer.toString("base64")}`;
+    }
+  }
+  if (!fields.studentId && fields.schoolId) {
+    fields.studentId = fields.schoolId;
+  }
+  const lookupId = fields.studentId || fields.schoolId;
+  if (lookupId) {
+    const existing = await db
+      .select({ id: cumulativeRecords.id })
+      .from(cumulativeRecords)
+      .where(
+        or(
+          eq(cumulativeRecords.studentId, lookupId),
+          eq(cumulativeRecords.schoolId, lookupId),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) {
+      await db.update(cumulativeRecords).set({ ...fields, updatedAt: new Date() }).where(eq(cumulativeRecords.id, existing[0].id));
+      return { id: existing[0].id, mode: "updated" };
+    }
+  }
+  const [inserted] = await db.insert(cumulativeRecords).values(fields as any).returning({ id: cumulativeRecords.id });
+  return { id: inserted.id, mode: "created" };
+}
+
 export async function updatePersonnel(formData: FormData) {
   await requireAdmin();
 
@@ -819,12 +994,17 @@ export async function updatePersonnel(formData: FormData) {
   const position = formData.get("position") as string;
   const email = formData.get("email") as string;
   const contact = formData.get("contact") as string;
-  const unitId = parseInt(formData.get("unitId") as string);
+  const unitIdStr = formData.get("unitId") as string;
+  const unitId = unitIdStr ? parseInt(unitIdStr) : null;
   const isHead = formData.get("isHead") === "on";
-  const avatar = formData.get("avatar") as File | null;
+  const avatarDataUrl = formData.get("avatarDataUrl") as string | null;
 
-  if (!id || !name || !unitId) {
-    throw new Error("ID, name, and unit are required");
+  if (!id || !name) {
+    throw new Error("ID and name are required");
+  }
+
+  if (!isHead && !unitId) {
+    throw new Error("Unit is required for non-head personnel");
   }
 
   if (isHead) {
@@ -832,9 +1012,8 @@ export async function updatePersonnel(formData: FormData) {
   }
 
   let avatarUrl: string | null | undefined = undefined;
-  if (avatar && avatar.size > 0 && avatar.size < 2 * 1024 * 1024) {
-    const buffer = Buffer.from(await avatar.arrayBuffer());
-    avatarUrl = `data:${avatar.type};base64,${buffer.toString("base64")}`;
+  if (avatarDataUrl) {
+    avatarUrl = avatarDataUrl;
   }
 
   await db.update(personnel)
@@ -850,4 +1029,145 @@ export async function updatePersonnel(formData: FormData) {
     .where(eq(personnel.id, id));
 
   revalidatePath("/portal/admin/personnel");
+}
+
+export async function saveStudentNeedsAssessment(formData: FormData) {
+  const textFields: Record<string, string | null> = {};
+  const fieldList = [
+    "studentId", "schoolId", "academicYear", "department", "courseOrStrand",
+    "fullName", "email", "contactNumber", "birthday", "age", "address",
+    "academicDifficultSubjects", "academicStudyHabits", "academicLearningDifficulties", "academicConcerns",
+    "personalProblems", "personalAdjustment", "personalFamilyConcerns",
+    "emotionalStressLevel", "emotionalAnxiety", "emotionalMotivation", "emotionalSelfConfidence",
+    "socialClassmates", "socialFriendships", "socialCommunication", "socialBullying",
+    "financialAllowance", "financialExpenses", "financialScholarship",
+    "careerGoal", "careerUncertainty", "careerSkills",
+    "healthMedical", "healthPhysicalLimitations",
+    "supportOther", "otherConcerns",
+  ];
+  for (const key of fieldList) {
+    const val = formData.get(key);
+    textFields[key] = typeof val === "string" ? val : null;
+  }
+
+  const boolFields: Record<string, boolean> = {};
+  for (const key of ["supportCounseling", "supportAcademic", "supportScholarship", "supportCareer"]) {
+    boolFields[key] = formData.get(key) === "on";
+  }
+
+  if (textFields.schoolId && !textFields.studentId) {
+    textFields.studentId = textFields.schoolId;
+  }
+
+  const lookupId = textFields.studentId || textFields.schoolId;
+  if (lookupId) {
+    const existing = await db
+      .select({ id: studentNeedsAssessment.id })
+      .from(studentNeedsAssessment)
+      .where(
+        or(
+          eq(studentNeedsAssessment.studentId, lookupId),
+          eq(studentNeedsAssessment.schoolId, lookupId),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) {
+      await db.update(studentNeedsAssessment).set({
+        ...textFields,
+        ...boolFields,
+        academicYear: textFields.academicYear || undefined,
+        updatedAt: new Date(),
+      } as any).where(eq(studentNeedsAssessment.id, existing[0].id));
+      return { id: existing[0].id, mode: "updated" };
+    }
+  }
+
+  const [inserted] = await db.insert(studentNeedsAssessment).values({
+    ...textFields,
+    ...boolFields,
+  } as any).returning({ id: studentNeedsAssessment.id });
+  return { id: inserted.id, mode: "created" };
+}
+
+export async function getStudentNeedsAssessment(studentId: string) {
+  if (!studentId) return null;
+  const [existing] = await db
+    .select()
+    .from(studentNeedsAssessment)
+    .where(
+      or(
+        eq(studentNeedsAssessment.studentId, studentId),
+        eq(studentNeedsAssessment.schoolId, studentId),
+      ),
+    )
+    .orderBy(desc(studentNeedsAssessment.updatedAt))
+    .limit(1);
+  return existing || null;
+}
+
+export async function updateNeedsAssessmentStatus(id: number, status: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") {
+    throw new Error("Unauthorized");
+  }
+  await db.update(studentNeedsAssessment).set({ status, updatedAt: new Date() }).where(eq(studentNeedsAssessment.id, id));
+  revalidatePath("/portal/admin/student-needs-assessment");
+}
+
+export async function getHandbooksPillars(type?: "handbook" | "pillar") {
+  const conditions = type ? [eq(handbooksPillars.type, type)] : [];
+  return await db
+    .select()
+    .from(handbooksPillars)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(handbooksPillars.sortOrder);
+}
+
+export async function createHandbookPillar(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+
+  const type = formData.get("type") as string;
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+  const image = formData.get("image") as string;
+  const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
+
+  if (!type || !title || !content) throw new Error("Type, title, and content are required");
+
+  await db.insert(handbooksPillars).values({ type, title, content, image: image || null, sortOrder } as any);
+  revalidatePath("/portal/admin/handbooks-pillars");
+  revalidatePath("/services");
+}
+
+export async function updateHandbookPillar(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+
+  const id = parseInt(formData.get("id") as string);
+  const type = formData.get("type") as string;
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+  const image = formData.get("image") as string;
+  const removeImage = formData.get("removeImage") === "true";
+  const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
+
+  if (!id || !type || !title || !content) throw new Error("All fields are required");
+
+  const updateData: any = { type, title, content, sortOrder, updatedAt: new Date() };
+  if (removeImage) updateData.image = null;
+  else if (image) updateData.image = image;
+
+  await db.update(handbooksPillars).set(updateData).where(eq(handbooksPillars.id, id));
+  revalidatePath("/portal/admin/handbooks-pillars");
+  revalidatePath("/services");
+}
+
+export async function deleteHandbookPillar(id: number) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+
+  await db.delete(handbooksPillars).where(eq(handbooksPillars.id, id));
+  revalidatePath("/portal/admin/handbooks-pillars");
+  revalidatePath("/services");
 }

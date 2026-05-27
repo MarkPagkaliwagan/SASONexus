@@ -1,41 +1,25 @@
 import Link from "next/link";
-import { db } from "@/db";
-import { students, preAdmissions, academicYears } from "@/db/schema";
-import { AdmissionList } from "@/components/admin/admission/AdmissionList";
-import { FiClock, FiClipboard, FiArrowRight } from "react-icons/fi";
+import { FiCalendar, FiBook, FiLayers, FiArrowRight } from "react-icons/fi";
 
 const sections = [
-  { href: "/portal/admin/admission/schedules", label: "Schedules", desc: "Manage admission schedule slots", icon: FiClock },
-  { href: "/portal/admin/admission/exam-results", label: "Student Exam Results", desc: "View and manage student exam results", icon: FiClipboard },
+  { href: "/portal/admin/admission/academic-years", label: "Academic Years", desc: "Manage academic years and semesters", icon: FiCalendar },
+  { href: "/portal/admin/admission/courses", label: "College Courses", desc: "Manage college program offerings", icon: FiBook },
+  { href: "/portal/admin/admission/strands", label: "SHS Strands", desc: "Manage senior high school strands", icon: FiLayers },
 ];
 
-export default async function AdmissionPage() {
-  const [items, preAdmissionList, academicYearList] = await Promise.all([
-    db.query.students.findMany({
-      orderBy: (s, { desc }) => [desc(s.enrolledAt)],
-    }),
-    db.query.preAdmissions.findMany(),
-    db.query.academicYears.findMany({
-      orderBy: (y, { desc }) => [desc(y.year)],
-    }),
-  ]);
-  const preAdmissionMap = Object.fromEntries(
-    preAdmissionList.map((p) => [p.id, p])
-  );
-  const academicYearOptions = academicYearList.map((y) => y.year);
-
+export default function AcademicSetupPage() {
   return (
     <>
       <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 mb-6">
-        <span>Admission</span>
+        <span>Academic Setup</span>
       </div>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admission Management</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage reference data for the pre-admission application form.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Academic Setup</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage academic reference data used across the system.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {sections.map((s) => {
           const Icon = s.icon;
           return (
@@ -54,8 +38,6 @@ export default async function AdmissionPage() {
           );
         })}
       </div>
-
-      <AdmissionList students={items} preAdmissionMap={preAdmissionMap} academicYearOptions={academicYearOptions} />
     </>
   );
 }

@@ -42,6 +42,7 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [newAvatarDataUrl, setNewAvatarDataUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const isEditing = !!editingPersonnel;
@@ -54,6 +55,7 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
       setCustomPosition("");
       setIsHead(editingPersonnel.isHead);
       setPreview(editingPersonnel.avatarUrl);
+      setNewAvatarDataUrl(null);
       setMessage(null);
     }
   }, [editingPersonnel]);
@@ -68,9 +70,18 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setMessage({ type: "error", text: "Photo must be smaller than 2MB" });
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader();
-      reader.onload = () => setPreview(reader.result as string);
+      reader.onload = () => {
+        setPreview(reader.result as string);
+        setNewAvatarDataUrl(reader.result as string);
+      };
       reader.readAsDataURL(file);
+      setMessage(null);
     }
   }
 
@@ -81,13 +92,17 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
     setCustomPosition("");
     setUseCustomPosition(false);
     setPreview(null);
-    setMessage(null);
+    setNewAvatarDataUrl(null);
     onCancelEdit?.();
   }
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setMessage(null);
+
+    if (newAvatarDataUrl) {
+      formData.set("avatarDataUrl", newAvatarDataUrl);
+    }
 
     try {
       if (isEditing && editingPersonnel) {
@@ -98,8 +113,7 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
         await createPersonnel(formData);
         setMessage({ type: "success", text: "Personnel added successfully!" });
       }
-      if (!isEditing) resetForm();
-      formRef.current?.reset();
+      resetForm();
     } catch (err) {
       setMessage({
         type: "error",

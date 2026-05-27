@@ -113,6 +113,27 @@
       "when": 1747119600000,
       "tag": "0015_add_personnel",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1747120000000,
+      "tag": "0016_add_is_head",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1747200000000,
+      "tag": "0017_enable_rls_on_public_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1748327093000,
+      "tag": "0018_add_cumulative_records",
+      "breakpoints": true
     }
   ]
 }

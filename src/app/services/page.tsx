@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { useRouter } from "next/navigation";
 import {
   FaUserFriends, FaUsers, FaClinicMedical, FaChurch, FaRunning,
-  FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock, FaExclamationCircle, FaChevronDown, FaFolder, FaClipboardList
+  FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock, FaExclamationCircle, FaChevronDown, FaFolder, FaClipboardList, FaDownload, FaMapMarkerAlt
 } from "react-icons/fa";
 import { submitInterviewAppointment, checkStudentNoShow, checkStudentAnyNoShow, fetchStudentDetails } from "@/lib/actions";
 import { jsPDF } from "jspdf";
@@ -102,6 +102,8 @@ const FormInput = ({ label, type, value, onChange, onFocus, onBlur, placeholder,
 
 export default function ServicesPage() {
   const [showModal, setShowModal] = useState(false);
+  const [showYearbookModal, setShowYearbookModal] = useState(false);
+  const [showHandbookModal, setShowHandbookModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [interviewType, setInterviewType] = useState<"initial" | "exit" | null>(null);
@@ -134,6 +136,8 @@ export default function ServicesPage() {
   const [confirmedData, setConfirmedData] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDropdown, setShowDropdown] = useState(false);
+  const [handbooks, setHandbooks] = useState<{ id: number; title: string; content: string; image: string | null }[]>([]);
+  const [pillars, setPillars] = useState<{ id: number; title: string; content: string; image: string | null }[]>([]);
   const router = useRouter();
 
   const clearError = (field: string) => setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
@@ -268,6 +272,15 @@ export default function ServicesPage() {
     }
   };
 
+  useEffect(() => {
+    (async () => {
+      const { getHandbooksPillars } = await import("@/lib/actions");
+      const all = await getHandbooksPillars();
+      setHandbooks(all.filter((i: any) => i.type === "handbook"));
+      setPillars(all.filter((i: any) => i.type === "pillar"));
+    })();
+  }, []);
+
   const totalSteps = interviewType === "initial" ? 3 : interviewType === "exit" ? 4 : 1;
   const stepLabels = interviewType === "initial"
     ? ["Type", "Details", "Schedule"]
@@ -354,6 +367,118 @@ export default function ServicesPage() {
     setNoShowReason("");
     setNoShowCustomReason("");
     setErrors({});
+  };
+
+  const renderYearbookModal = () => {
+    if (!showYearbookModal) return null;
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+        onClick={() => setShowYearbookModal(false)}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-gradient-to-r from-[#b8860b] to-[#ffc107] px-6 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                <FaDownload className="text-white text-sm" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">How to Get Your Copy</h3>
+                <p className="text-xs text-yellow-100">Yearbook claiming instructions</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowYearbookModal(false)}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all cursor-pointer"
+            >
+              <FaTimes className="text-white text-xs" />
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="space-y-5">
+              <div className="flex gap-4">
+                <div className="w-9 h-9 rounded-xl bg-[#b8860b]/10 flex items-center justify-center shrink-0">
+                  <span className="text-[#b8860b] font-bold text-sm">1</span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Visit the <strong>Assessment Office</strong> located at the <strong>Macasaet Bldg (ground floor)</strong> and ask for your OR Number for the yearbook.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-9 h-9 rounded-xl bg-[#b8860b]/10 flex items-center justify-center shrink-0">
+                  <span className="text-[#b8860b] font-bold text-sm">2</span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    You will be directed to proceed to the <strong>Student Affairs Office (SASO)</strong> located at the <strong>Eala Bldg (2nd floor)</strong> where you can claim your copy of the yearbook.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <p className="text-xs text-gray-400 text-center">Present your OR number upon claiming.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderHandbookModal = () => {
+    if (!showHandbookModal) return null;
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+        onClick={() => setShowHandbookModal(false)}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div
+          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-gradient-to-r from-[#007848] to-[#00a864] px-6 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                <FaBook className="text-white text-sm" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">How to Get Your Handbook</h3>
+                <p className="text-xs text-green-100">Handbook claiming instructions</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowHandbookModal(false)}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all cursor-pointer"
+            >
+              <FaTimes className="text-white text-xs" />
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="space-y-5">
+              <div className="flex gap-4">
+                <div className="w-9 h-9 rounded-xl bg-[#007848]/10 flex items-center justify-center shrink-0">
+                  <span className="text-[#007848] font-bold text-sm">1</span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Bring the <strong>Official Receipt of your Enrollment</strong> to the <strong>Student Affairs Office (SASO)</strong> located at the <strong>Eala Bldg (2nd floor)</strong> where you can claim your handbook.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <p className="text-xs text-gray-400 text-center">Present your official receipt upon claiming.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const downloadConfirmation = () => {
@@ -992,80 +1117,84 @@ export default function ServicesPage() {
           </div>
         </section>
 
-        <section className="py-16 px-4 max-w-4xl mx-auto">
-          <div className="text-center mb-10">
+        <section className="py-16 px-4 max-w-6xl mx-auto">
+          <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Student Affairs & Services Office</h2>
-            <div className="w-16 h-1 bg-[#007848] mx-auto rounded-full" />
+            <p className="text-gray-500 text-sm max-w-2xl mx-auto">
+              The Student Affairs and Services Office (SASO) is committed to providing comprehensive support services that enhance student development and success.
+            </p>
+            <div className="w-16 h-1 bg-[#007848] mx-auto rounded-full mt-4" />
           </div>
-          <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-              <div className="flex">
-                <div className="w-2 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* GCSU — spans full width because of interactive controls */}
+            <div className="md:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group">
+              <div className="md:flex">
+                <div className="hidden md:block w-2 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
                 <div className="p-6 md:p-8 flex-1">
-                    <div className="flex flex-wrap items-start gap-3 mb-4">
-                     <div className="p-3 bg-[#007848]/10 rounded-xl">
-                       <FaUserFriends className="text-xl text-[#007848]" />
-                     </div>
-                     <div className="flex-1 min-w-[200px]">
-                       <h3 className="text-xl font-bold text-gray-800">Guidance and Career Services Unit</h3>
-                       <p className="text-xs text-gray-500 font-medium tracking-wider">GCSU</p>
-                     </div>
-                      <div className="flex flex-col gap-2 w-full sm:w-auto relative">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setShowModal(true); }, 600); }}
-                            disabled={loading}
-                            className="px-4 py-1.5 bg-[#007848] text-white text-xs font-medium rounded-md hover:bg-[#005f3a] transition-colors cursor-pointer whitespace-nowrap border border-[#007848] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                          >
-                            {loading ? (
-                              <><svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Loading...</>
-                            ) : (
-                              <><FaClock className="text-[10px]" /> Schedule for Interview</>
-                            )}
-                          </button>
-                          <div className="relative">
+                  <div className="flex flex-wrap items-start gap-4 mb-5">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#007848] to-[#00a864] flex items-center justify-center shadow-lg shadow-[#007848]/20 shrink-0">
+                      <FaUserFriends className="text-xl text-white" />
+                    </div>
+                    <div className="flex-1 min-w-[200px]">
+                      <h3 className="text-xl font-bold text-gray-800">Guidance and Career Services Unit</h3>
+                      <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">GCSU</p>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setShowModal(true); }, 600); }}
+                        disabled={loading}
+                        className="px-4 py-2 bg-gradient-to-r from-[#007848] to-[#00a864] text-white text-xs font-semibold rounded-xl hover:from-[#005f3a] hover:to-[#008f56] transition-all cursor-pointer shadow-md shadow-[#007848]/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-1.5"
+                      >
+                        {loading ? (
+                          <><svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Loading...</>
+                        ) : (
+                          <><FaClock className="text-[10px]" /> Schedule for Interview</>
+                        )}
+                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowDropdown(!showDropdown)}
+                          className="px-3 py-2 border-2 border-[#007848]/30 text-[#007848] text-xs font-semibold rounded-xl hover:bg-[#007848]/5 transition-all cursor-pointer flex items-center gap-1.5"
+                        >
+                          <FaFolder className="text-[10px]" /> Forms <FaChevronDown className="text-[8px]" />
+                        </button>
+                        {showDropdown && (
+                          <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
                             <button
-                              onClick={() => setShowDropdown(!showDropdown)}
-                              className="px-3 py-1.5 bg-[#007848] text-white text-xs font-medium rounded-md hover:bg-[#005f3a] transition-colors cursor-pointer border border-[#007848] flex items-center gap-1.5"
+                              onClick={() => { setShowDropdown(false); router.push("/services/cumulative-record"); }}
+                              className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#007848]/5 hover:text-[#007848] transition-colors cursor-pointer border-b border-gray-100 flex items-center gap-3"
                             >
-                              <FaFolder className="text-[10px]" /> Forms <FaChevronDown className="text-[8px]" />
+                              <FaFolder className="text-[#007848] text-xs" />
+                              Cumulative Record Folder
                             </button>
-                            {showDropdown && (
-                              <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                                <button
-                                  onClick={() => { setShowDropdown(false); router.push("/services/cumulative-record"); }}
-                                  className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#007848]/5 hover:text-[#007848] transition-colors cursor-pointer border-b border-gray-100 flex items-center gap-3"
-                                >
-                                  <FaFolder className="text-[#007848] text-xs" />
-                                  Cumulative Record Folder
-                                </button>
-                                <button
-                                  onClick={() => { setShowDropdown(false); router.push("/services/student-needs-assessment"); }}
-                                  className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#007848]/5 hover:text-[#007848] transition-colors cursor-pointer flex items-center gap-3"
-                                >
-                                  <FaClipboardList className="text-[#007848] text-xs" />
-                                  Student Needs Assessment
-                                </button>
-                              </div>
-                            )}
+                            <button
+                              onClick={() => { setShowDropdown(false); router.push("/services/student-needs-assessment"); }}
+                              className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#007848]/5 hover:text-[#007848] transition-colors cursor-pointer flex items-center gap-3"
+                            >
+                              <FaClipboardList className="text-[#007848] text-xs" />
+                              Student Needs Assessment
+                            </button>
                           </div>
-                        </div>
+                        )}
                       </div>
-                   </div>
+                    </div>
+                  </div>
                   <p className="text-gray-600 leading-relaxed mb-4 text-sm">
                     Facilitates the process of acquiring the self-actualization of the student in his/her pursuit of becoming a fully functioning individual blessed with intellectual, emotional, spiritual, and social strengths.
                   </p>
                   <div className="mb-4">
-                    <h4 className="font-semibold text-gray-800 text-sm mb-2">To attain its goals the following services are offered:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <h4 className="font-semibold text-gray-800 text-sm mb-3">Services Offered</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[
                         "Counseling",
                         "Testing and Measurement and Individual Appraisal Services",
                         "Information Service/Enrichment Program",
                         "Peer Facilitators Program",
                       ].map((service) => (
-                        <div key={service} className="flex items-start gap-2">
-                          <div className="mt-1 p-1 bg-[#007848]/10 rounded-full">
+                        <div key={service} className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-2.5">
+                          <div className="mt-0.5 w-5 h-5 rounded-full bg-[#007848]/10 flex items-center justify-center shrink-0">
                             <FaCheck className="text-[8px] text-[#007848]" />
                           </div>
                           <span className="text-gray-700 text-sm">{service}</span>
@@ -1073,263 +1202,329 @@ export default function ServicesPage() {
                       ))}
                     </div>
                   </div>
-                  <p className="text-gray-400 text-xs">
-                    Located on the Second Floor of Eala Bldg., the Guidance and Counseling Office has a centralized organization set up which caters to all the levels of the institution.
-                  </p>
+                  <div className="flex items-start gap-2.5 p-3 bg-[#007848]/5 rounded-xl border border-[#007848]/10">
+                    <div className="w-2 h-2 rounded-full bg-[#007848] mt-1 shrink-0" />
+                    <p className="text-gray-500 text-xs leading-relaxed">
+                      Located on the Second Floor of Eala Bldg. — caters to all levels of the institution.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-              <div className="flex">
-                <div className="w-2 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
-                <div className="p-6 md:p-8 flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-[#007848]/10 rounded-xl">
-                      <FaUsers className="text-xl text-[#007848]" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800">Student Formation and Development Unit</h3>
-                      <p className="text-xs text-gray-500 font-medium tracking-wider">SFDU</p>
-                    </div>
+            {/* SFDU */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="h-2 bg-gradient-to-r from-[#007848] to-[#00a864]" />
+              <div className="p-6 md:p-7">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#007848] to-[#00a864] flex items-center justify-center shadow-lg shadow-[#007848]/15 shrink-0">
+                    <FaUsers className="text-lg text-white" />
                   </div>
-                  <h4 className="font-semibold text-gray-800 text-sm mb-3">Student Activities</h4>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    SPC provides wholesome activities and opportunities for students to enhance their skills in the following areas:
-                  </p>
-                  <div className="mb-4 pl-4">
-                    <p className="text-gray-700 text-sm mb-1">a. Co-Curricular Program</p>
-                    <p className="text-gray-700 text-sm mb-3">b. Extra-Curricular Program</p>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 group-hover:text-[#007848] transition-colors">Student Formation and Development Unit</h3>
+                    <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">SFDU</p>
                   </div>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    SPC believes that the educational development of students shall not be limited to the four corners of the classroom. They shall be encouraged to involve themselves in co-curricular and extra-curricular activities to foster social attitudes of cooperation, responsibility, creativity, and leadership.
-                  </p>
-                  <p className="text-gray-600 leading-relaxed text-sm">
+                </div>
+                <h4 className="font-semibold text-gray-800 text-sm mb-2">Student Activities</h4>
+                <p className="text-gray-600 leading-relaxed mb-3 text-sm">
+                  SPC provides wholesome activities and opportunities for students to enhance their skills in the following areas:
+                </p>
+                <div className="mb-3 pl-4 border-l-2 border-[#007848]/20 space-y-1">
+                  <p className="text-gray-700 text-sm">a. Co-Curricular Program</p>
+                  <p className="text-gray-700 text-sm">b. Extra-Curricular Program</p>
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-3 text-sm">
+                  SPC believes that the educational development of students shall not be limited to the four corners of the classroom. They shall be encouraged to involve themselves in co-curricular and extra-curricular activities to foster social attitudes of cooperation, responsibility, creativity, and leadership.
+                </p>
+                <div className="flex items-start gap-2.5 p-3 bg-[#007848]/5 rounded-xl border border-[#007848]/10">
+                  <div className="w-2 h-2 rounded-full bg-[#007848] mt-1 shrink-0" />
+                  <p className="text-gray-500 text-xs leading-relaxed">
                     Unit credits shall be given to students who participate in co-curricular and extra-curricular activities as part of the grading criteria.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-              <div className="flex">
-                <div className="w-2 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
-                <div className="p-6 md:p-8 flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-[#007848]/10 rounded-xl">
-                      <FaClinicMedical className="text-xl text-[#007848]" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800">Medical and Dental Clinics</h3>
-                    </div>
+            {/* Medical & Dental */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="h-2 bg-gradient-to-r from-[#007848] to-[#00a864]" />
+              <div className="p-6 md:p-7">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#007848] to-[#00a864] flex items-center justify-center shadow-lg shadow-[#007848]/15 shrink-0">
+                    <FaClinicMedical className="text-lg text-white" />
                   </div>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    Protects, maintains, and promotes the health of school children, adolescents, collegiate students, and personnel to attain the maximum state of well-being. This concern is through the cooperative effort of the Medical and Dental team.
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 group-hover:text-[#007848] transition-colors">Medical and Dental Clinics</h3>
+                  </div>
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-3 text-sm">
+                  Protects, maintains, and promotes the health of school children, adolescents, collegiate students, and personnel to attain the maximum state of well-being through the cooperative effort of the Medical and Dental team.
+                </p>
+                <div className="flex items-start gap-2.5 p-3 bg-[#007848]/5 rounded-xl border border-[#007848]/10 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-[#007848] mt-1 shrink-0" />
+                  <p className="text-gray-500 text-xs leading-relaxed">
+                    Situated near the Food Laboratory. Open daily 7:00 AM - 8:00 PM, Sat 8:00 AM - 5:00 PM.
                   </p>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    Situated near the Food Laboratory are these two auxiliary services of the OSA. Both clinics shall be responsible for the timely medical aid as well as the maintenance of proper dental health for the school population during official working hours.
-                  </p>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    Staffed by a full-time physician and a dentist with their respective clerks, the clinics are open daily from 7:00 a.m. to 8:00 p.m. and 8:00 to 5:00 p.m. on Saturdays.
-                  </p>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    A part of the school is the San Pablo Colleges Medical Center (SPCMC). It is designed to serve the medical needs of the SPC Community and to provide a place for actual training for its medical courses. All students are granted a 10% discount on their hospitalization for room and board.
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-3 text-sm">
+                  Staffed by a full-time physician and a dentist with their respective clerks.
+                </p>
+                <div className="flex items-start gap-2.5 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1 shrink-0" />
+                  <p className="text-gray-600 text-xs leading-relaxed">
+                    All students are granted a <strong>10% discount</strong> on hospitalization for room and board at the San Pablo Colleges Medical Center (SPCMC).
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-              <div className="flex">
-                <div className="w-2 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
-                <div className="p-6 md:p-8 flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-[#007848]/10 rounded-xl">
-                      <FaChurch className="text-xl text-[#007848]" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800">Youth Campus Ministry</h3>
-                      <p className="text-xs text-gray-500 font-medium tracking-wider">YCM</p>
-                    </div>
+            {/* YCM */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="h-2 bg-gradient-to-r from-[#007848] to-[#00a864]" />
+              <div className="p-6 md:p-7">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#007848] to-[#00a864] flex items-center justify-center shadow-lg shadow-[#007848]/15 shrink-0">
+                    <FaChurch className="text-lg text-white" />
                   </div>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    Implements the institutionalized religious/spiritual activities and programs of the college for students to become better Christians.
-                  </p>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    Education and personality development include spiritual formation. Religious education cannot be excluded from wholesome and complete personality development. Important for the student's life is that he/she not only develops his/her intellectual ability but that he/she also grows as a person who knows his/her responsibilities to God and his/her community.
-                  </p>
-                  <p className="text-gray-600 leading-relaxed mb-4 text-sm">
-                    Such a unit is designed to increase the faith of the community so that each student would become a better Christian through different spiritual activities such as:
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                    {[
-                      "Retreats, Recollection",
-                      "Catholic Life in the Spirit Seminar (CLSS)",
-                      "Masses",
-                      "Novenas",
-                      "Christ Youth in Action (CYA)",
-                      "Other related church activities",
-                    ].map((activity) => (
-                      <div key={activity} className="flex items-start gap-2">
-                        <div className="mt-1 p-1 bg-[#007848]/10 rounded-full">
-                          <FaCheck className="text-[8px] text-[#007848]" />
-                        </div>
-                        <span className="text-gray-700 text-sm">{activity}</span>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 group-hover:text-[#007848] transition-colors">Youth Campus Ministry</h3>
+                    <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">YCM</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-3 text-sm">
+                  Implements the institutionalized religious/spiritual activities and programs of the college for students to become better Christians.
+                </p>
+                <p className="text-gray-600 leading-relaxed mb-3 text-sm">
+                  Education and personality development include spiritual formation. Religious education cannot be excluded from wholesome and complete personality development.
+                </p>
+                <h4 className="font-semibold text-gray-800 text-sm mb-2">Spiritual Activities</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                  {[
+                    "Retreats, Recollection",
+                    "Catholic Life in the Spirit Seminar (CLSS)",
+                    "Masses",
+                    "Novenas",
+                    "Christ Youth in Action (CYA)",
+                    "Other related church activities",
+                  ].map((activity) => (
+                    <div key={activity} className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-2.5">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-[#007848]/10 flex items-center justify-center shrink-0">
+                        <FaCheck className="text-[8px] text-[#007848]" />
                       </div>
-                    ))}
-                  </div>
-                  <p className="text-gray-600 leading-relaxed text-sm">
-                    Concerning this, a College Chaplain or laypersons may also be consulted for spiritual advice.
+                      <span className="text-gray-700 text-sm">{activity}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-start gap-2.5 p-3 bg-[#007848]/5 rounded-xl border border-[#007848]/10">
+                  <div className="w-2 h-2 rounded-full bg-[#007848] mt-1 shrink-0" />
+                  <p className="text-gray-500 text-xs leading-relaxed">
+                    A College Chaplain or laypersons may also be consulted for spiritual advice.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-              <div className="flex">
-                <div className="w-2 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
-                <div className="p-6 md:p-8 flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-[#007848]/10 rounded-xl">
-                      <FaRunning className="text-xl text-[#007848]" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800">Sports Development Program</h3>
-                    </div>
+            {/* Sports */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="h-2 bg-gradient-to-r from-[#007848] to-[#00a864]" />
+              <div className="p-6 md:p-7">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#007848] to-[#00a864] flex items-center justify-center shadow-lg shadow-[#007848]/15 shrink-0">
+                    <FaRunning className="text-lg text-white" />
                   </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 group-hover:text-[#007848] transition-colors">Sports Development Program</h3>
+                  </div>
+                </div>
 
-                  <h4 className="font-semibold text-gray-800 text-sm mb-3">Eligibility Discount</h4>
-                  <div className="overflow-x-auto mb-6">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-[#007848]/10">
-                          <th className="text-left p-2 font-semibold text-gray-700">Category</th>
-                          <th className="text-left p-2 font-semibold text-gray-700">Requirement</th>
-                          <th className="text-left p-2 font-semibold text-gray-700">Discount</th>
-                          <th className="text-left p-2 font-semibold text-gray-700">Perks</th>
+                <h4 className="font-semibold text-gray-800 text-sm mb-3">Eligibility Discount</h4>
+                <div className="overflow-x-auto mb-5">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-[#007848]/10 to-[#00a864]/10">
+                        <th className="text-left p-2.5 font-semibold text-gray-700 text-xs">Category</th>
+                        <th className="text-left p-2.5 font-semibold text-gray-700 text-xs">Requirement</th>
+                        <th className="text-left p-2.5 font-semibold text-gray-700 text-xs">Discount</th>
+                        <th className="text-left p-2.5 font-semibold text-gray-700 text-xs">Perks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { cat: "Team", req: "No failing grades", disc: "5%-100% off TF", perks: "Allowance + free uniform + seminar" },
+                        { cat: "Dual", req: "No failing grades", disc: "5%-50% off TF", perks: "Allowance + free uniform + seminar" },
+                        { cat: "Individual", req: "No failing grades", disc: "5%-50% off TF", perks: "Allowance + free uniform + seminar" },
+                      ].map((row) => (
+                        <tr key={row.cat} className="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
+                          <td className="p-2.5 font-medium text-gray-800 text-xs">{row.cat}</td>
+                          <td className="p-2.5 text-gray-600 text-xs">{row.req}</td>
+                          <td className="p-2.5 text-gray-600 text-xs">{row.disc}</td>
+                          <td className="p-2.5 text-gray-600 text-xs">{row.perks}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { cat: "Team", req: "No failing grades", disc: "5%-100% discount on TF", perks: "With allowance and free uniform and seminar" },
-                          { cat: "Dual", req: "No failing grades", disc: "5%-50% discount on TF", perks: "With allowance and free uniform and seminar" },
-                          { cat: "Individual", req: "No failing grades", disc: "5%-50% discount on TF", perks: "With allowance and free uniform and seminar" },
-                        ].map((row) => (
-                          <tr key={row.cat} className="border-t border-gray-100">
-                            <td className="p-2 font-medium text-gray-800">{row.cat}</td>
-                            <td className="p-2 text-gray-600">{row.req}</td>
-                            <td className="p-2 text-gray-600">{row.disc}</td>
-                            <td className="p-2 text-gray-600">{row.perks}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-                  <h4 className="font-semibold text-gray-800 text-sm mb-3">Discount Privileges for Siblings</h4>
-                  <p className="text-gray-600 leading-relaxed text-sm mb-3">
-                    Siblings shall be granted discount privileges. Discounts shall be given to the member with the lowest fee.
-                  </p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-[#007848]/10">
-                          <th className="text-left p-2 font-semibold text-gray-700">Eligibility</th>
-                          <th className="text-left p-2 font-semibold text-gray-700">Discount In charge</th>
-                          <th className="text-left p-2 font-semibold text-gray-700">Discount</th>
+                <h4 className="font-semibold text-gray-800 text-sm mb-2">Sibling Discount Privileges</h4>
+                <p className="text-gray-600 leading-relaxed text-sm mb-3">
+                  Siblings shall be granted discount privileges. Discounts shall be given to the member with the lowest fee.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-[#007848]/10 to-[#00a864]/10">
+                        <th className="text-left p-2.5 font-semibold text-gray-700 text-xs">Eligibility</th>
+                        <th className="text-left p-2.5 font-semibold text-gray-700 text-xs">Discount to</th>
+                        <th className="text-left p-2.5 font-semibold text-gray-700 text-xs">Discount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { elig: "3 enrolled siblings", charge: "Youngest sibling", disc: "25% off TF" },
+                        { elig: "4 enrolled siblings", charge: "Youngest sibling", disc: "50% off TF" },
+                      ].map((row) => (
+                        <tr key={row.elig} className="border-t border-gray-100 hover:bg-gray-50/50 transition-colors">
+                          <td className="p-2.5 font-medium text-gray-800 text-xs">{row.elig}</td>
+                          <td className="p-2.5 text-gray-600 text-xs">{row.charge}</td>
+                          <td className="p-2.5 text-gray-600 text-xs">{row.disc}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { elig: "Three (3) enrolled siblings", charge: "Youngest among sibling", disc: "25% discount on TF" },
-                          { elig: "Four (4) enrolled siblings", charge: "Youngest among sibling", disc: "50% discount on TF" },
-                        ].map((row) => (
-                          <tr key={row.elig} className="border-t border-gray-100">
-                            <td className="p-2 font-medium text-gray-800">{row.elig}</td>
-                            <td className="p-2 text-gray-600">{row.charge}</td>
-                            <td className="p-2 text-gray-600">{row.disc}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
+
           </div>
         </section>
 
-        <section className="bg-[#007848] text-white py-16 px-4">
-          <div className="max-w-7xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Student Handbook | Pillars</h2>
-            <p className="text-green-100 text-lg max-w-2xl mx-auto">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        <section className="bg-gradient-to-br from-[#007848] via-[#008f56] to-[#00a864] text-white py-20 px-4 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-10 left-10 w-40 h-40 bg-white rounded-full blur-3xl" />
+            <div className="absolute bottom-10 right-10 w-60 h-60 bg-white rounded-full blur-3xl" />
+          </div>
+          <div className="max-w-7xl mx-auto text-center relative">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-xs font-semibold text-green-100 mb-6">
+              <FaBook className="text-[10px]" /> Resources
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Student Handbook &amp; Pillars</h2>
+            <p className="text-green-100/90 text-lg max-w-2xl mx-auto leading-relaxed">
+              View downloadable handbooks and annual institutional pillars for students.
             </p>
           </div>
         </section>
 
-        <section className="py-16 px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Available Handbook</h2>
-            <div className="w-16 h-1 bg-[#007848] mx-auto rounded-full" />
+        <section className="py-20 px-4 max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#007848]/10 rounded-full text-xs font-semibold text-[#007848] mb-4">
+              <FaBook className="text-[10px]" /> Reference Materials
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3 tracking-tight">Available Handbook</h2>
+            <p className="text-gray-400 text-sm max-w-xl mx-auto">Browse through the official student handbooks for different academic levels.</p>
           </div>
-          <div className="space-y-6">
-            {[
-              { title: "College Handbook 2021-2026", content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." },
-              { title: "Senior High School Handbook 2022-2026", content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." },
-            ].map((hb) => (
-              <div key={hb.title} className="group bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-                <div className="flex">
-                  <div className="w-1.5 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
-                  <div className="p-6 flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-[#007848] to-[#00a864] text-white text-xs font-semibold rounded-full shadow-sm">
-                        <FaBook className="text-[10px]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {handbooks.map((hb, i) => (
+              <div key={hb.id} className="group bg-white rounded-2xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border border-gray-100 overflow-hidden hover:shadow-[0_8px_30px_-8px_rgba(0,120,72,0.2)] hover:border-[#007848]/20 hover:-translate-y-1 transition-all duration-300 flex">
+                <div className="w-1 bg-gradient-to-b from-[#007848] to-[#00a864] flex-shrink-0" />
+                {(hb as any).image ? (
+                  <>
+                    <div className="w-36 flex-shrink-0 overflow-hidden relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent z-10" />
+                      <img src={(hb as any).image} alt={hb.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col justify-center min-w-0">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#007848]/10 text-[#007848] text-[10px] font-bold rounded-full mb-2.5 w-fit">
+                        <FaBook className="text-[9px]" />
                         <span>Handbook</span>
                       </div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-[#007848] transition-colors leading-snug">{hb.title}</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{hb.content}</p>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-[#007848] transition-colors">{hb.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{hb.content}</p>
+                  </>
+                ) : (
+                  <div className="p-5 flex-1">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#007848]/10 text-[#007848] text-[10px] font-bold rounded-full mb-2.5">
+                      <FaBook className="text-[9px]" />
+                      <span>Handbook</span>
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-[#007848] transition-colors leading-snug">{hb.title}</h3>
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">{hb.content}</p>
                   </div>
-                </div>
+                )}
               </div>
             ))}
+            {handbooks.length === 0 && (
+              <p className="col-span-full text-center text-gray-400 text-sm py-12">No handbooks available yet.</p>
+            )}
+          </div>
+          <div className="text-center mt-10">
+            <button
+              onClick={() => setShowHandbookModal(true)}
+              className="inline-flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#007848] to-[#00a864] text-white text-sm font-bold rounded-xl hover:from-[#005f3a] hover:to-[#008f56] transition-all shadow-lg shadow-[#007848]/25 hover:shadow-xl hover:shadow-[#007848]/30 hover:-translate-y-0.5 cursor-pointer"
+            >
+              <FaDownload className="text-xs" />
+              How to Get Your Copy
+            </button>
           </div>
         </section>
 
-        <section className="py-16 px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Available Pillars</h2>
-            <div className="w-16 h-1 bg-[#007848] mx-auto rounded-full" />
+        <section className="py-20 px-4 max-w-7xl mx-auto bg-gray-50/50">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#b8860b]/10 rounded-full text-xs font-semibold text-[#b8860b] mb-4">
+              <FaStar className="text-[10px]" /> Milestones
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3 tracking-tight">Institutional Pillars</h2>
+            <p className="text-gray-400 text-sm max-w-xl mx-auto">Annual pillars that guide the institution&apos;s goals and direction.</p>
           </div>
-          <div className="space-y-6">
-            {[
-              { title: "AY 21-22", content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco." },
-              { title: "AY 22-23", content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco." },
-              { title: "AY 23-24", content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco." },
-              { title: "AY 24-25", content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco." },
-              { title: "AY 25-26", content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco." },
-            ].map((pillar) => (
-              <div key={pillar.title} className="group bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-                <div className="flex">
-                  <div className="w-1.5 bg-gradient-to-b from-[#b8860b] to-[#ffc107] flex-shrink-0" />
-                  <div className="p-6 flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-[#b8860b] to-[#ffc107] text-white text-xs font-semibold rounded-full shadow-sm">
-                        <FaStar className="text-[10px]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pillars.map((pillar) => (
+              <div key={pillar.id} className="group bg-white rounded-2xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border border-gray-100 overflow-hidden hover:shadow-[0_8px_30px_-8px_rgba(184,134,11,0.2)] hover:border-[#b8860b]/20 hover:-translate-y-1 transition-all duration-300 flex">
+                <div className="w-1 bg-gradient-to-b from-[#b8860b] to-[#ffc107] flex-shrink-0" />
+                {(pillar as any).image ? (
+                  <>
+                    <div className="w-36 flex-shrink-0 overflow-hidden relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent z-10" />
+                      <img src={(pillar as any).image} alt={pillar.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col justify-center min-w-0">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#b8860b]/10 text-[#b8860b] text-[10px] font-bold rounded-full mb-2.5 w-fit">
+                        <FaStar className="text-[9px]" />
                         <span>Pillar</span>
                       </div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-[#b8860b] transition-colors leading-snug">{pillar.title}</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{pillar.content}</p>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-[#b8860b] transition-colors">{pillar.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{pillar.content}</p>
+                  </>
+                ) : (
+                  <div className="p-5 flex-1">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#b8860b]/10 text-[#b8860b] text-[10px] font-bold rounded-full mb-2.5">
+                      <FaStar className="text-[9px]" />
+                      <span>Pillar</span>
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-[#b8860b] transition-colors leading-snug">{pillar.title}</h3>
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">{pillar.content}</p>
                   </div>
-                </div>
+                )}
               </div>
             ))}
+            {pillars.length === 0 && (
+              <p className="col-span-full text-center text-gray-400 text-sm py-12">No pillars available yet.</p>
+            )}
+          </div>
+          <div className="text-center mt-10">
+            <button
+              onClick={() => setShowYearbookModal(true)}
+              className="inline-flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#b8860b] to-[#ffc107] text-white text-sm font-bold rounded-xl hover:from-[#a07509] hover:to-[#e0a800] transition-all shadow-lg shadow-[#b8860b]/25 hover:shadow-xl hover:shadow-[#b8860b]/30 hover:-translate-y-0.5 cursor-pointer"
+            >
+              <FaDownload className="text-xs" />
+              How to Get Your Copy
+            </button>
           </div>
         </section>
 
         {renderModal()}
+        {renderHandbookModal()}
+        {renderYearbookModal()}
         <Footer />
       </main>
     </>

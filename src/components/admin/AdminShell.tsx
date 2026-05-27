@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SignOutIconButton } from "@/components/SignOutButton";
-import { FiGrid, FiUsers, FiBookOpen, FiFileText, FiVolume2, FiMenu, FiX, FiChevronRight, FiCalendar, FiUserCheck } from "react-icons/fi";
+import { FiGrid, FiUsers, FiBookOpen, FiFileText, FiVolume2, FiClipboard, FiMenu, FiX, FiChevronRight, FiCalendar, FiUserCheck, FiFolder, FiEdit3, FiBook } from "react-icons/fi";
 
 const navItems = [
   { href: "/portal/admin", label: "Dashboard", icon: FiGrid },
@@ -13,7 +13,11 @@ const navItems = [
   { href: "/portal/admin/staff", label: "Staff Management", icon: FiUserCheck },
   { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2 },
   { href: "/portal/admin/admission/pre-admissions", label: "Application", icon: FiFileText },
-  { href: "/portal/admin/admission", label: "Admission", icon: FiBookOpen },
+  { href: "/portal/admin/academic-setup", label: "Academic Setup", icon: FiBookOpen },
+  { href: "/portal/admin/cumulative-records", label: "Cumulative Records", icon: FiFolder },
+  { href: "/portal/admin/student-needs-assessment", label: "Student Needs Assessment", icon: FiEdit3 },
+  { href: "/portal/admin/handbooks-pillars", label: "Handbooks & Pillars", icon: FiBook },
+  { href: "/portal/admin/admission", label: "Admission", icon: FiClipboard },
   { href: "/portal/admin/interview", label: "Interview", icon: FiCalendar },
 ];
 
@@ -31,11 +35,19 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
   function isActive(href: string) {
     if (pathname === href) return true;
     if (href === "/portal/admin") return false;
+    if (href === "/portal/admin/academic-setup") {
+      return pathname.startsWith("/portal/admin/admission/academic-years") ||
+             pathname.startsWith("/portal/admin/admission/courses") ||
+             pathname.startsWith("/portal/admin/admission/strands");
+    }
     if (pathname.startsWith(href + "/")) {
       if (href === "/portal/admin/admission") {
         if (pathname === "/portal/admin/admission") return true;
         if (pathname.startsWith("/portal/admin/admission/pre-admissions")) return false;
         if (pathname.startsWith("/portal/admin/admission/announcements")) return false;
+        if (pathname.startsWith("/portal/admin/admission/academic-years")) return false;
+        if (pathname.startsWith("/portal/admin/admission/courses")) return false;
+        if (pathname.startsWith("/portal/admin/admission/strands")) return false;
         return true;
       }
       return true;
@@ -56,7 +68,7 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
       {/* Sidebar drawer (mobile) / static sidebar (desktop) */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50
+          fixed inset-y-0 left-0 z-50
           w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800
           flex flex-col flex-shrink-0
           transition-transform duration-200
@@ -76,7 +88,7 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -118,7 +130,7 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 lg:px-6 gap-4 sticky top-0 z-10">
           <button
             onClick={() => setSidebarOpen(true)}
