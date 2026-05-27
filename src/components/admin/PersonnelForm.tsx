@@ -136,9 +136,9 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white">
           {isEditing ? "Edit Personnel" : "Add Personnel"}
         </h2>
         {isEditing && (
@@ -148,7 +148,7 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
             disabled={loading}
             className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
-            <FiX className="text-lg" />
+            <FiX className="text-base" />
           </button>
         )}
       </div>
@@ -165,184 +165,185 @@ export function PersonnelForm({ units, editingPersonnel, onCancelEdit }: Props) 
         </div>
       )}
 
-      <form ref={formRef} action={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Full Name
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            defaultValue={editingPersonnel?.name || ""}
-            placeholder="Juan Dela Cruz"
-            disabled={loading}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
+      <form ref={formRef} action={handleSubmit}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div>
+            <label htmlFor="name" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              defaultValue={editingPersonnel?.name || ""}
+              placeholder="Juan Dela Cruz"
+              disabled={loading}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2 text-sm outline-none focus:border-[#007848] focus:ring-4 focus:ring-[#007848]/10 text-gray-900 dark:text-white placeholder-gray-400 transition disabled:opacity-50"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            defaultValue={editingPersonnel?.email || ""}
-            placeholder="personnel@sanpablocolleges.edu.ph"
-            disabled={loading}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
+          <div>
+            <label htmlFor="email" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              defaultValue={editingPersonnel?.email || ""}
+              placeholder="personnel@sanpablocolleges.edu.ph"
+              disabled={loading}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2 text-sm outline-none focus:border-[#007848] focus:ring-4 focus:ring-[#007848]/10 text-gray-900 dark:text-white placeholder-gray-400 transition disabled:opacity-50"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contact Number
-          </label>
-          <input
-            id="contact"
-            name="contact"
-            type="text"
-            defaultValue={editingPersonnel?.contact || ""}
-            placeholder="09123456789"
-            disabled={loading}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
+          <div>
+            <label htmlFor="contact" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Contact
+            </label>
+            <input
+              id="contact"
+              name="contact"
+              type="text"
+              defaultValue={editingPersonnel?.contact || ""}
+              placeholder="09123456789"
+              disabled={loading}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2 text-sm outline-none focus:border-[#007848] focus:ring-4 focus:ring-[#007848]/10 text-gray-900 dark:text-white placeholder-gray-400 transition disabled:opacity-50"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="unitId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            SASO Unit {!isHead && <span className="text-red-500">*</span>}
-          </label>
-          <select
-            id="unitId"
-            name="unitId"
-            required={!isHead}
-            disabled={loading || isHead}
-            value={selectedUnit}
-            onChange={(e) => { setSelectedUnit(e.target.value); setSelectedPosition(""); setUseCustomPosition(false); }}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value="">{isHead ? "Not required for SASO Head" : "Select SASO unit..."}</option>
-            {units.map((unit) => (
-              <option key={unit.id} value={unit.id}>
-                {unit.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-3 p-3 bg-[#007848]/5 dark:bg-[#007848]/10 rounded-xl border border-[#007848]/10">
-          <input
-            id="isHead"
-            name="isHead"
-            type="checkbox"
-            checked={isHead}
-            onChange={(e) => setIsHead(e.target.checked)}
-            disabled={loading}
-            className="w-4 h-4 rounded border-gray-300 text-[#007848] focus:ring-[#007848] cursor-pointer"
-          />
-          <label htmlFor="isHead" className="text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none">
-            Mark as SASO Head
-          </label>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Position
-          </label>
-          {!useCustomPosition ? (
+          <div>
+            <label htmlFor="unitId" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Unit {!isHead && <span className="text-red-500">*</span>}
+            </label>
             <select
-              value={selectedPosition}
-              onChange={handlePositionSelect}
-              disabled={loading || !selectedSasoUnit}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+              id="unitId"
+              name="unitId"
+              required={!isHead}
+              disabled={loading || isHead}
+              value={selectedUnit}
+              onChange={(e) => { setSelectedUnit(e.target.value); setSelectedPosition(""); setUseCustomPosition(false); }}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2 text-sm outline-none focus:border-[#007848] focus:ring-4 focus:ring-[#007848]/10 text-gray-900 dark:text-white transition disabled:opacity-50"
             >
-              <option value="">
-                {positions.length > 0 ? "Select position..." : "No positions available"}
-              </option>
-              {positions.map((pos) => (
-                <option key={pos.id} value={pos.name}>
-                  {pos.name}
+              <option value="">{isHead ? "N/A for Head" : "Select unit..."}</option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name}
                 </option>
               ))}
-              {positions.length > 0 && (
-                <option value="__other__">Other (type custom position)</option>
-              )}
             </select>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                name="position"
-                type="text"
-                value={customPosition}
-                onChange={(e) => setCustomPosition(e.target.value)}
-                placeholder="Type custom position..."
-                disabled={loading}
-                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-[#007848] dark:focus:border-[#00a35e] focus:ring-4 focus:ring-[#007848]/10 dark:focus:ring-[#00a35e]/20 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <button
-                type="button"
-                onClick={() => { setUseCustomPosition(false); setCustomPosition(""); }}
-                disabled={loading}
-                className="px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              >
-                Back
-              </button>
-            </div>
-          )}
-          {useCustomPosition && (
-            <input type="hidden" name="position" value={customPosition} />
-          )}
-          {!useCustomPosition && (
-            <input type="hidden" name="position" value={selectedPosition} />
-          )}
-        </div>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Profile Picture
-          </label>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => fileRef.current?.click()}
-            className="w-full rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 text-center hover:border-[#007848] dark:hover:border-[#00a35e] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {preview ? (
-              <img src={preview} alt="Preview" className="w-20 h-20 rounded-full object-cover mx-auto" />
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Position
+            </label>
+            {!useCustomPosition ? (
+              <select
+                value={selectedPosition}
+                onChange={handlePositionSelect}
+                disabled={loading || !selectedSasoUnit}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2 text-sm outline-none focus:border-[#007848] focus:ring-4 focus:ring-[#007848]/10 text-gray-900 dark:text-white transition disabled:opacity-50"
+              >
+                <option value="">
+                  {positions.length > 0 ? "Select..." : "No positions"}
+                </option>
+                {positions.map((pos) => (
+                  <option key={pos.id} value={pos.name}>
+                    {pos.name}
+                  </option>
+                ))}
+                {positions.length > 0 && (
+                  <option value="__other__">Other...</option>
+                )}
+              </select>
             ) : (
-              <div className="flex flex-col items-center gap-1">
-                <FiCamera className="text-xl text-gray-400" />
-                <span className="text-xs text-gray-400">Click to upload photo</span>
+              <div className="flex gap-2">
+                <input
+                  name="position"
+                  type="text"
+                  value={customPosition}
+                  onChange={(e) => setCustomPosition(e.target.value)}
+                  placeholder="Type position..."
+                  disabled={loading}
+                  className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2 text-sm outline-none focus:border-[#007848] focus:ring-4 focus:ring-[#007848]/10 text-gray-900 dark:text-white placeholder-gray-400 transition disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setUseCustomPosition(false); setCustomPosition(""); }}
+                  disabled={loading}
+                  className="px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  Back
+                </button>
               </div>
             )}
-          </button>
-          <input
-            ref={fileRef}
-            id="avatar"
-            name="avatar"
-            type="file"
-            accept="image/*"
-            disabled={loading}
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
+            {useCustomPosition && (
+              <input type="hidden" name="position" value={customPosition} />
+            )}
+            {!useCustomPosition && (
+              <input type="hidden" name="position" value={selectedPosition} />
+            )}
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-[#007848] text-white font-semibold py-2.5 rounded-xl hover:bg-[#005f38] transition focus:outline-none focus:ring-4 focus:ring-[#007848]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {loading ? (
-            <><FiLoader className="animate-spin" /> {isEditing ? "Saving..." : "Adding..."}</>
-          ) : (
-            isEditing ? "Save Changes" : "Add Personnel"
-          )}
-        </button>
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Photo
+              </label>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => fileRef.current?.click()}
+                className="w-full rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-2 px-3 text-center hover:border-[#007848] dark:hover:border-[#00a35e] transition cursor-pointer disabled:opacity-50"
+              >
+                {preview ? (
+                  <img src={preview} alt="Preview" className="w-8 h-8 rounded-full object-cover mx-auto" />
+                ) : (
+                  <div className="flex items-center justify-center gap-1.5">
+                    <FiCamera className="text-sm text-gray-400" />
+                    <span className="text-xs text-gray-400">Upload</span>
+                  </div>
+                )}
+              </button>
+              <input ref={fileRef} id="avatar" name="avatar" type="file" accept="image/*" disabled={loading} onChange={handleFileChange} className="hidden" />
+            </div>
+
+            <div className="flex flex-col items-center justify-end h-10 mt-[22px]">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isHead}
+                onClick={() => setIsHead(!isHead)}
+                disabled={loading}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ${
+                  isHead ? "bg-[#007848]" : "bg-gray-300 dark:bg-gray-600"
+                } disabled:opacity-50`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ${
+                    isHead ? "translate-x-[18px]" : "translate-x-[3px]"
+                  }`}
+                />
+              </button>
+              <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-0.5">Head</span>
+              {isHead && <input type="hidden" name="isHead" value="on" />}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-10 px-5 bg-[#007848] text-white font-semibold rounded-xl hover:bg-[#005f38] transition focus:outline-none focus:ring-4 focus:ring-[#007848]/20 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+            >
+              {loading ? (
+                <><FiLoader className="animate-spin text-sm" /> {isEditing ? "Saving..." : "Adding..."}</>
+              ) : (
+                isEditing ? "Save" : "Add"
+              )}
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );

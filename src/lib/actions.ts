@@ -7,7 +7,7 @@ import {
   staffAccounts, preAdmissions, students,
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
   announcements, interviewSchedules, interviewAppointments, personnel,
-  cumulativeRecords, verificationCodes, studentNeedsAssessment, handbooksPillars,
+  cumulativeRecords, verificationCodes, studentNeedsAssessment, handbooksPillars, documentClaims,
 } from "@/db/schema";
 import { eq, ne, and, or, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -38,6 +38,15 @@ export async function createStaffAccount(formData: FormData) {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
+
+  const existing = await db.select({ id: staffAccounts.id })
+    .from(staffAccounts)
+    .where(eq(staffAccounts.email, email))
+    .limit(1);
+
+  if (existing.length > 0) {
+    throw new Error("A staff account with this email already exists.");
+  }
 
   await db.insert(staffAccounts).values({
     name,
@@ -890,6 +899,87 @@ export async function lookupStudentForSna(studentId: string) {
   return fromSna[0] || null;
 }
 
+export async function sendStaffLoginOtp(email: string, password: string) {
+  const [user] = await db
+    .select()
+    .from(staffAccounts)
+    .where(and(eq(staffAccounts.email, email), eq(staffAccounts.isActive, true)))
+    .limit(1);
+  if (!user) return { ok: false, error: "Invalid email or password" };
+  const passwordValid = await bcrypt.compare(password, user.password);
+  if (!passwordValid) return { ok: false, error: "Invalid email or password" };
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const { sendStaffOtpEmail } = await import("@/lib/email");
+  await sendStaffOtpEmail(email, code);
+  await db.insert(verificationCodes).values({ email, code, expiresAt });
+  return { ok: true };
+}
+
+async function requireSession() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) throw new Error("Unauthorized");
+  return session;
+}
+
+export async function updateStaffProfileName(name: string) {
+  const session = await requireSession();
+  await db.update(staffAccounts).set({ name }).where(eq(staffAccounts.email, session.user.email!));
+  revalidatePath("/portal/admin/profile");
+}
+
+export async function updateStaffProfileAvatar(avatarBase64: string) {
+  const session = await requireSession();
+  await db.update(staffAccounts).set({ avatarUrl: avatarBase64 }).where(eq(staffAccounts.email, session.user.email!));
+  revalidatePath("/portal/admin/profile");
+}
+
+export async function sendProfileChangeOtp() {
+  const session = await requireSession();
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const { sendStaffOtpEmail } = await import("@/lib/email");
+  await sendStaffOtpEmail(session.user.email!, code);
+  await db.insert(verificationCodes).values({ email: session.user.email!, code, expiresAt });
+}
+
+export async function updateStaffEmail(newEmail: string, otp: string) {
+  const session = await requireSession();
+  const [record] = await db
+    .select()
+    .from(verificationCodes)
+    .where(and(eq(verificationCodes.email, session.user.email!), eq(verificationCodes.code, otp), eq(verificationCodes.used, false)))
+    .orderBy(desc(verificationCodes.createdAt))
+    .limit(1);
+  if (!record) throw new Error("Invalid or expired OTP");
+  if (new Date() > record.expiresAt) throw new Error("OTP has expired");
+  const existing = await db.select().from(staffAccounts).where(eq(staffAccounts.email, newEmail)).limit(1);
+  if (existing[0]) throw new Error("Email already in use");
+  await db.update(staffAccounts).set({ email: newEmail }).where(eq(staffAccounts.email, session.user.email!));
+  await db.update(verificationCodes).set({ used: true }).where(eq(verificationCodes.id, record.id));
+  revalidatePath("/portal/admin/profile");
+}
+
+export async function updateStaffPassword(currentPassword: string, newPassword: string, otp: string) {
+  const session = await requireSession();
+  const [user] = await db.select().from(staffAccounts).where(eq(staffAccounts.email, session.user.email!)).limit(1);
+  if (!user) throw new Error("User not found");
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) throw new Error("Current password is incorrect");
+  const [record] = await db
+    .select()
+    .from(verificationCodes)
+    .where(and(eq(verificationCodes.email, session.user.email!), eq(verificationCodes.code, otp), eq(verificationCodes.used, false)))
+    .orderBy(desc(verificationCodes.createdAt))
+    .limit(1);
+  if (!record) throw new Error("Invalid or expired OTP");
+  if (new Date() > record.expiresAt) throw new Error("OTP has expired");
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await db.update(staffAccounts).set({ password: hashed }).where(eq(staffAccounts.email, session.user.email!));
+  await db.update(verificationCodes).set({ used: true }).where(eq(verificationCodes.id, record.id));
+  revalidatePath("/portal/admin/profile");
+}
+
 export async function sendCumulativeRecordCode(email: string, studentId: string) {
   if (!email) throw new Error("Email is required");
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -1170,4 +1260,58 @@ export async function deleteHandbookPillar(id: number) {
   await db.delete(handbooksPillars).where(eq(handbooksPillars.id, id));
   revalidatePath("/portal/admin/handbooks-pillars");
   revalidatePath("/services");
+}
+
+export async function submitDocumentClaim(data: {
+  type: "handbook" | "yearbook";
+  orNumber: string;
+  fullName: string;
+  academicYear?: string;
+  department?: string;
+  course?: string;
+  strand?: string;
+  level?: string;
+  pillarYear?: string;
+}) {
+  if (!data.orNumber || !data.fullName) throw new Error("OR Number and Full Name are required");
+
+  const existing = await db
+    .select()
+    .from(documentClaims)
+    .where(and(eq(documentClaims.type, data.type), eq(documentClaims.orNumber, data.orNumber)))
+    .limit(1);
+
+  if (existing.length > 0) {
+    throw new Error("This OR number has already been used to claim a " + data.type);
+  }
+
+  await db.insert(documentClaims).values({
+    type: data.type,
+    orNumber: data.orNumber,
+    fullName: data.fullName,
+    academicYear: data.academicYear || null,
+    department: data.department || null,
+    course: data.course || null,
+    strand: data.strand || null,
+    level: data.level || null,
+    pillarYear: data.pillarYear || null,
+  });
+}
+
+export async function getDocumentClaims() {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+
+  return await db
+    .select()
+    .from(documentClaims)
+    .orderBy(desc(documentClaims.createdAt));
+}
+
+export async function updateDocumentClaimStatus(id: number, status: "pending" | "claimed") {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+
+  await db.update(documentClaims).set({ status }).where(eq(documentClaims.id, id));
+  revalidatePath("/portal/admin/document-claims");
 }

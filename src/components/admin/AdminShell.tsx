@@ -10,7 +10,7 @@ import { FiGrid, FiUsers, FiBookOpen, FiFileText, FiVolume2, FiClipboard, FiMenu
 const navItems = [
   { href: "/portal/admin", label: "Dashboard", icon: FiGrid },
   { href: "/portal/admin/personnel", label: "Personnel", icon: FiUsers },
-  { href: "/portal/admin/staff", label: "Staff Management", icon: FiUserCheck },
+  { href: "/portal/admin/staff", label: "Staff Accounts", icon: FiUserCheck },
   { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2 },
   { href: "/portal/admin/admission/pre-admissions", label: "Application", icon: FiFileText },
   { href: "/portal/admin/academic-setup", label: "Academic Setup", icon: FiBookOpen },
@@ -120,10 +120,10 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
                 <span className="text-xs font-semibold text-[#007848] dark:text-[#00a35e]">{userInitial}</span>
               )}
             </div>
-            <div className="flex-1 min-w-0">
+            <Link href="/portal/admin/profile" className="flex-1 min-w-0 hover:opacity-80 transition">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{userName}</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 truncate">Super Admin</p>
-            </div>
+            </Link>
           </div>
           <SignOutIconButton className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition w-full" />
         </div>

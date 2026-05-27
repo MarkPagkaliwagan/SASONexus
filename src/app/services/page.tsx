@@ -8,7 +8,7 @@ import {
   FaUserFriends, FaUsers, FaClinicMedical, FaChurch, FaRunning,
   FaBook, FaStar, FaCheck, FaCheckCircle, FaTimes, FaArrowRight, FaArrowLeft, FaUpload, FaClock, FaExclamationCircle, FaChevronDown, FaFolder, FaClipboardList, FaDownload, FaMapMarkerAlt
 } from "react-icons/fa";
-import { submitInterviewAppointment, checkStudentNoShow, checkStudentAnyNoShow, fetchStudentDetails } from "@/lib/actions";
+import { submitInterviewAppointment, checkStudentNoShow, checkStudentAnyNoShow, fetchStudentDetails, submitDocumentClaim } from "@/lib/actions";
 import { jsPDF } from "jspdf";
 
 const units = [
@@ -140,6 +140,13 @@ export default function ServicesPage() {
   const [pillars, setPillars] = useState<{ id: number; title: string; content: string; image: string | null }[]>([]);
   const router = useRouter();
 
+  const [claimAcademicYears, setClaimAcademicYears] = useState<{ id: number; year: string }[]>([]);
+  const [hbCourses, setHbCourses] = useState<{ id: number; name: string }[]>([]);
+  const [claimSubmitting, setClaimSubmitting] = useState(false);
+  const [claimMessage, setClaimMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [hbForm, setHbForm] = useState({ fullName: "", academicYear: "", level: "", department: "", course: "", strand: "", orNumber: "" });
+  const [ybForm, setYbForm] = useState({ fullName: "", academicYear: "", orNumber: "" });
+
   const clearError = (field: string) => setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
 
   function validateDetails(): boolean {
@@ -222,6 +229,23 @@ export default function ServicesPage() {
     }, 200);
     return () => { clearTimeout(timer); setIsSearchingStudent(false); };
   }, [studentId]);
+
+  useEffect(() => {
+    if (showHandbookModal || showYearbookModal) {
+      fetch("/api/academic-years").then((r) => r.json()).then(setClaimAcademicYears);
+      fetch("/api/departments").then((r) => r.json()).then((d) => { setDepartments(d); });
+      fetch("/api/strands").then((r) => r.json()).then(setStrands);
+    }
+  }, [showHandbookModal, showYearbookModal]);
+
+  useEffect(() => {
+    if (hbForm.department) {
+      fetch(`/api/courses?department=${encodeURIComponent(hbForm.department)}`)
+        .then((r) => r.json()).then(setHbCourses);
+    } else {
+      setHbCourses([]);
+    }
+  }, [hbForm.department]);
 
   useEffect(() => {
     if (!studentId || studentId.length < 2) {
@@ -374,11 +398,11 @@ export default function ServicesPage() {
     return (
       <div
         className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-        onClick={() => setShowYearbookModal(false)}
+        onClick={() => { setShowYearbookModal(false); setClaimMessage(null); }}
       >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
         <div
-          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-hidden"
+          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bg-gradient-to-r from-[#b8860b] to-[#ffc107] px-6 py-5 flex items-center justify-between">
@@ -392,37 +416,81 @@ export default function ServicesPage() {
               </div>
             </div>
             <button
-              onClick={() => setShowYearbookModal(false)}
+              onClick={() => { setShowYearbookModal(false); setClaimMessage(null); }}
               className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all cursor-pointer"
             >
               <FaTimes className="text-white text-xs" />
             </button>
           </div>
-          <div className="p-6">
-            <div className="space-y-5">
-              <div className="flex gap-4">
-                <div className="w-9 h-9 rounded-xl bg-[#b8860b]/10 flex items-center justify-center shrink-0">
-                  <span className="text-[#b8860b] font-bold text-sm">1</span>
+          <div className="p-6 space-y-5">
+            <div className="bg-[#b8860b]/5 rounded-xl p-4 border border-[#b8860b]/10 space-y-3">
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-lg bg-[#b8860b]/10 flex items-center justify-center shrink-0">
+                  <span className="text-[#b8860b] font-bold text-xs">1</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    Visit the <strong>Assessment Office</strong> located at the <strong>Macasaet Bldg (ground floor)</strong> and ask for your OR Number for the yearbook.
-                  </p>
-                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Visit the <strong>Assessment Office</strong> at <strong>Macasaet Bldg (ground floor)</strong> and ask for your OR Number for the yearbook.
+                </p>
               </div>
-              <div className="flex gap-4">
-                <div className="w-9 h-9 rounded-xl bg-[#b8860b]/10 flex items-center justify-center shrink-0">
-                  <span className="text-[#b8860b] font-bold text-sm">2</span>
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-lg bg-[#b8860b]/10 flex items-center justify-center shrink-0">
+                  <span className="text-[#b8860b] font-bold text-xs">2</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    You will be directed to proceed to the <strong>Student Affairs Office (SASO)</strong> located at the <strong>Eala Bldg (2nd floor)</strong> where you can claim your copy of the yearbook.
-                  </p>
-                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Proceed to <strong>Student Affairs Office (SASO)</strong> at <strong>Eala Bldg (2nd floor)</strong> to claim your yearbook.
+                </p>
               </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400 text-center">Present your OR number upon claiming.</p>
+
+            <div className="border-t border-gray-100 pt-5">
+              <h4 className="text-sm font-bold text-gray-800 mb-4">Claim Form</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+                  <input type="text" value={ybForm.fullName} onChange={(e) => setYbForm((f) => ({ ...f, fullName: e.target.value }))} placeholder="Enter your full name" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#b8860b] focus:ring-2 focus:ring-[#b8860b]/10 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Academic Year <span className="text-red-500">*</span></label>
+                  <select value={ybForm.academicYear} onChange={(e) => setYbForm((f) => ({ ...f, academicYear: e.target.value }))} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#b8860b] focus:ring-2 focus:ring-[#b8860b]/10 transition-all bg-white">
+                    <option value="">Select year</option>
+                    {claimAcademicYears.map((y) => (<option key={y.id} value={y.year}>{y.year}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">OR Number <span className="text-red-500">*</span></label>
+                  <input type="text" value={ybForm.orNumber} onChange={(e) => setYbForm((f) => ({ ...f, orNumber: e.target.value }))} placeholder="Enter OR number from receipt" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#b8860b] focus:ring-2 focus:ring-[#b8860b]/10 transition-all" />
+                </div>
+              </div>
+
+              {claimMessage && (
+                <div className={`mt-3 flex items-start gap-2 p-3 rounded-xl text-xs font-medium ${
+                  claimMessage.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
+                }`}>
+                  {claimMessage.type === "success" ? <FaCheckCircle className="mt-0.5 shrink-0" /> : <FaExclamationCircle className="mt-0.5 shrink-0" />}
+                  {claimMessage.text}
+                </div>
+              )}
+
+              <button
+                onClick={async () => {
+                  if (!ybForm.fullName || !ybForm.orNumber) { setClaimMessage({ type: "error", text: "Please fill in all required fields." }); return; }
+                  setClaimMessage(null);
+                  setClaimSubmitting(true);
+                  try {
+                    await submitDocumentClaim({ type: "yearbook", fullName: ybForm.fullName, orNumber: ybForm.orNumber, academicYear: ybForm.academicYear || undefined });
+                    setClaimMessage({ type: "success", text: "Claim submitted successfully! Present your OR number at SASO to claim your yearbook." });
+                    setYbForm({ fullName: "", academicYear: "", orNumber: "" });
+                  } catch (err: any) {
+                    setClaimMessage({ type: "error", text: err.message });
+                  } finally {
+                    setClaimSubmitting(false);
+                  }
+                }}
+                disabled={claimSubmitting}
+                className="mt-4 w-full px-4 py-3 bg-gradient-to-r from-[#b8860b] to-[#ffc107] text-white text-sm font-bold rounded-xl hover:from-[#a07509] hover:to-[#e0a800] transition-all shadow-lg shadow-[#b8860b]/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {claimSubmitting ? "Submitting..." : "Submit Claim"}
+              </button>
             </div>
           </div>
         </div>
@@ -435,11 +503,11 @@ export default function ServicesPage() {
     return (
       <div
         className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-        onClick={() => setShowHandbookModal(false)}
+        onClick={() => { setShowHandbookModal(false); setClaimMessage(null); }}
       >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
         <div
-          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-hidden"
+          className="relative bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg max-h-[95vh] md:max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bg-gradient-to-r from-[#007848] to-[#00a864] px-6 py-5 flex items-center justify-between">
@@ -453,27 +521,112 @@ export default function ServicesPage() {
               </div>
             </div>
             <button
-              onClick={() => setShowHandbookModal(false)}
+              onClick={() => { setShowHandbookModal(false); setClaimMessage(null); }}
               className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all cursor-pointer"
             >
               <FaTimes className="text-white text-xs" />
             </button>
           </div>
-          <div className="p-6">
-            <div className="space-y-5">
-              <div className="flex gap-4">
-                <div className="w-9 h-9 rounded-xl bg-[#007848]/10 flex items-center justify-center shrink-0">
-                  <span className="text-[#007848] font-bold text-sm">1</span>
+          <div className="p-6 space-y-5">
+            <div className="bg-[#007848]/5 rounded-xl p-4 border border-[#007848]/10">
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-lg bg-[#007848]/10 flex items-center justify-center shrink-0">
+                  <span className="text-[#007848] font-bold text-xs">1</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    Bring the <strong>Official Receipt of your Enrollment</strong> to the <strong>Student Affairs Office (SASO)</strong> located at the <strong>Eala Bldg (2nd floor)</strong> where you can claim your handbook.
-                  </p>
-                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Bring the <strong>Official Receipt of your Enrollment</strong> to the <strong>Student Affairs Office (SASO)</strong> at <strong>Eala Bldg (2nd floor)</strong> to claim your handbook.
+                </p>
               </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400 text-center">Present your official receipt upon claiming.</p>
+
+            <div className="border-t border-gray-100 pt-5">
+              <h4 className="text-sm font-bold text-gray-800 mb-4">Claim Form</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+                  <input type="text" value={hbForm.fullName} onChange={(e) => setHbForm((f) => ({ ...f, fullName: e.target.value }))} placeholder="Enter your full name" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Academic Year <span className="text-red-500">*</span></label>
+                  <select value={hbForm.academicYear} onChange={(e) => setHbForm((f) => ({ ...f, academicYear: e.target.value }))} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 transition-all bg-white">
+                    <option value="">Select year</option>
+                    {claimAcademicYears.map((y) => (<option key={y.id} value={y.year}>{y.year}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Level <span className="text-red-500">*</span></label>
+                  <select value={hbForm.level} onChange={(e) => setHbForm((f) => ({ ...f, level: e.target.value, department: "", course: "", strand: "" }))} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 transition-all bg-white">
+                    <option value="">Select level</option>
+                    <option value="Grade School">Grade School</option>
+                    <option value="Junior High">Junior High</option>
+                    <option value="Senior High">Senior High</option>
+                    <option value="College">College</option>
+                  </select>
+                </div>
+                {hbForm.level === "College" && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Department <span className="text-red-500">*</span></label>
+                      <select value={hbForm.department} onChange={(e) => setHbForm((f) => ({ ...f, department: e.target.value, course: "" }))} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 transition-all bg-white">
+                        <option value="">Select department</option>
+                        {departments.map((d) => (<option key={d.id} value={d.name}>{d.name}</option>))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Course <span className="text-red-500">*</span></label>
+                      <select value={hbForm.course} onChange={(e) => setHbForm((f) => ({ ...f, course: e.target.value }))} disabled={!hbForm.department} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 transition-all bg-white disabled:bg-gray-50 disabled:text-gray-400">
+                        <option value="">Select course</option>
+                        {hbCourses.map((c) => (<option key={c.id} value={c.name}>{c.name}</option>))}
+                      </select>
+                    </div>
+                  </>
+                )}
+                {hbForm.level === "Senior High" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Strand <span className="text-red-500">*</span></label>
+                    <select value={hbForm.strand} onChange={(e) => setHbForm((f) => ({ ...f, strand: e.target.value }))} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 transition-all bg-white">
+                      <option value="">Select strand</option>
+                      {strands.map((s) => (<option key={s.id} value={s.name}>{s.name}</option>))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">OR Number <span className="text-red-500">*</span></label>
+                  <input type="text" value={hbForm.orNumber} onChange={(e) => setHbForm((f) => ({ ...f, orNumber: e.target.value }))} placeholder="Enter OR number from your enrollment receipt" className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-xs outline-none focus:border-[#007848] focus:ring-2 focus:ring-[#007848]/10 transition-all" />
+                </div>
+              </div>
+
+              {claimMessage && (
+                <div className={`mt-3 flex items-start gap-2 p-3 rounded-xl text-xs font-medium ${
+                  claimMessage.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
+                }`}>
+                  {claimMessage.type === "success" ? <FaCheckCircle className="mt-0.5 shrink-0" /> : <FaExclamationCircle className="mt-0.5 shrink-0" />}
+                  {claimMessage.text}
+                </div>
+              )}
+
+              <button
+                onClick={async () => {
+                  if (!hbForm.fullName || !hbForm.academicYear || !hbForm.level || !hbForm.orNumber) { setClaimMessage({ type: "error", text: "Please fill in all required fields." }); return; }
+                  if (hbForm.level === "College" && (!hbForm.department || !hbForm.course)) { setClaimMessage({ type: "error", text: "Please select department and course for College." }); return; }
+                  if (hbForm.level === "Senior High" && !hbForm.strand) { setClaimMessage({ type: "error", text: "Please select your strand." }); return; }
+                  setClaimMessage(null);
+                  setClaimSubmitting(true);
+                  try {
+                    await submitDocumentClaim({ type: "handbook", fullName: hbForm.fullName, orNumber: hbForm.orNumber, academicYear: hbForm.academicYear, level: hbForm.level, department: hbForm.department || undefined, course: hbForm.course || undefined, strand: hbForm.strand || undefined });
+                    setClaimMessage({ type: "success", text: "Claim submitted successfully! Bring your OR receipt to SASO to claim your handbook." });
+                    setHbForm({ fullName: "", academicYear: "", level: "", department: "", course: "", strand: "", orNumber: "" });
+                  } catch (err: any) {
+                    setClaimMessage({ type: "error", text: err.message });
+                  } finally {
+                    setClaimSubmitting(false);
+                  }
+                }}
+                disabled={claimSubmitting}
+                className="mt-4 w-full px-4 py-3 bg-gradient-to-r from-[#007848] to-[#00a864] text-white text-sm font-bold rounded-xl hover:from-[#005f3a] hover:to-[#008f56] transition-all shadow-lg shadow-[#007848]/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {claimSubmitting ? "Submitting..." : "Submit Claim"}
+              </button>
             </div>
           </div>
         </div>

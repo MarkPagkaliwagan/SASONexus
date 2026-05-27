@@ -11,7 +11,7 @@ interface SidebarProps {
 
 const navItems = [
   { href: "/portal/admin", label: "Dashboard", icon: FiGrid },
-  { href: "/portal/admin/staff", label: "Staff Management", icon: FiUsers },
+  { href: "/portal/admin/staff", label: "Staff Accounts", icon: FiUsers },
   { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2 },
   { href: "/portal/admin/admission/pre-admissions", label: "Application", icon: FiFileText },
   { href: "/portal/admin/admission", label: "Admission", icon: FiBookOpen },

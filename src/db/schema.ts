@@ -7,6 +7,7 @@ import {
   varchar,
   integer,
   boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -397,3 +398,20 @@ export const handbooksPillars = pgTable("handbooks_pillars", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const documentClaims = pgTable("document_claims", {
+  id: serial("id").primaryKey(),
+  type: varchar("type", { length: 20 }).notNull(),
+  orNumber: varchar("or_number", { length: 100 }).notNull(),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  academicYear: varchar("academic_year", { length: 50 }),
+  department: varchar("department", { length: 100 }),
+  course: varchar("course", { length: 255 }),
+  strand: varchar("strand", { length: 255 }),
+  level: varchar("level", { length: 100 }),
+  pillarYear: varchar("pillar_year", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueOrPerType: unique("uq_document_claims_type_or").on(table.type, table.orNumber),
+}));

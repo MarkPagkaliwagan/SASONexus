@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { db } from "@/db";
 import { sasoUnits, personnel } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import {
   FaGraduationCap, FaEye, FaBullseye, FaHeart, FaHandshake,
   FaSearch, FaLightbulb, FaUserFriends, FaUsers,
@@ -35,7 +35,13 @@ async function getUnitsWithStaff() {
     .where(and(eq(personnel.isHead, true), eq(personnel.isActive, true)))
     .limit(1);
 
-  const units = await db.select().from(sasoUnits).orderBy(asc(sasoUnits.name));
+  const units = await db
+    .select()
+    .from(sasoUnits)
+    .orderBy(
+      sql`CASE WHEN ${sasoUnits.slug} = 'guidance' THEN 0 ELSE 1 END`,
+      asc(sasoUnits.name)
+    );
 
   const result = [];
   for (const unit of units) {
@@ -47,7 +53,10 @@ async function getUnitsWithStaff() {
       })
       .from(personnel)
       .where(and(eq(personnel.unitId, unit.id), eq(personnel.isActive, true)))
-      .orderBy(asc(personnel.name));
+      .orderBy(
+        sql`CASE WHEN ${personnel.position} = 'Student Assistant' THEN 1 ELSE 0 END`,
+        asc(personnel.name)
+      );
     result.push({ ...unit, staff });
   }
   return { sasoHead: sasoHead[0] || null, unitsWithStaff: result };
@@ -282,27 +291,29 @@ export default async function AboutPage() {
                       </div>
                     </div>
                     {unit.staff.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {unit.staff.map((person) => (
-                          <div key={person.id} className="flex items-center gap-4 p-4 bg-gray-50/80 rounded-xl hover:bg-white hover:shadow-md hover:border-[#007848]/10 border border-transparent transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-[#007848]/10 to-[#00a864]/10 flex items-center justify-center shrink-0">
+                          <div key={person.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-[#007848]/20 transition-all duration-300 group">
+                            <div className="h-44 bg-gray-50 flex items-center justify-center overflow-hidden">
                               {person.avatarUrl ? (
-                                <img src={person.avatarUrl} alt={person.name} className="w-full h-full object-cover" />
+                                <img src={person.avatarUrl} alt={person.name} className="w-full h-full object-contain" />
                               ) : (
-                                <span className="text-sm font-bold text-[#007848]">{person.name.charAt(0)}</span>
+                                <span className="text-5xl font-bold text-gray-300">{person.name.charAt(0)}</span>
                               )}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-gray-900 truncate">{person.name}</p>
-                              <p className="text-xs text-[#007848] font-medium truncate">{person.positionName || "Staff"}</p>
-                              <div className="flex items-center gap-1 mt-1">
-                                <FaEnvelopeIcon className="text-[10px] text-gray-300" />
-                                <span className="text-[11px] text-gray-400 truncate">{person.email}</span>
-                              </div>
+                            <div className="p-4">
+                              <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-[#007848] transition-colors">{person.name}</h4>
+                              <p className="text-xs text-[#007848] font-medium mt-0.5">{person.positionName || "Staff"}</p>
+                              {person.email && (
+                                <div className="flex items-center gap-1.5 mt-2 text-gray-400">
+                                  <FaEnvelopeIcon className="text-[10px] shrink-0" />
+                                  <span className="text-[11px] truncate">{person.email}</span>
+                                </div>
+                              )}
                               {person.contact && (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <FaPhoneAlt className="text-[10px] text-gray-300" />
-                                  <span className="text-[11px] text-gray-400 truncate">{person.contact}</span>
+                                <div className="flex items-center gap-1.5 mt-1 text-gray-400">
+                                  <FaPhoneAlt className="text-[10px] shrink-0" />
+                                  <span className="text-[11px] truncate">{person.contact}</span>
                                 </div>
                               )}
                             </div>

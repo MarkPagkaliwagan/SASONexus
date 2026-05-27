@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { handbooksPillars } from "@/db/schema";
-import { asc } from "drizzle-orm";
+import { handbooksPillars, documentClaims } from "@/db/schema";
+import { asc, desc } from "drizzle-orm";
 import { HandbooksPillarsManager } from "./HandbooksPillarsManager";
 
 export default async function HandbooksPillarsPage() {
@@ -8,6 +8,11 @@ export default async function HandbooksPillarsPage() {
     .select()
     .from(handbooksPillars)
     .orderBy(asc(handbooksPillars.sortOrder));
+
+  const claims = await db
+    .select()
+    .from(documentClaims)
+    .orderBy(desc(documentClaims.createdAt));
 
   return (
     <>
@@ -17,10 +22,10 @@ export default async function HandbooksPillarsPage() {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Handbooks &amp; Pillars</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage Student Handbook and Pillars content displayed on the Services page.</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage content and document claims.</p>
       </div>
 
-      <HandbooksPillarsManager items={items} />
+      <HandbooksPillarsManager items={items} claims={claims} />
     </>
   );
 }

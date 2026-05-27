@@ -5,7 +5,7 @@ import { StaffForm } from "@/components/admin/StaffForm";
 import { StaffList } from "@/components/admin/StaffList";
 import { FiChevronRight } from "react-icons/fi";
 
-export default async function StaffManagementPage() {
+export default async function StaffAccountsPage() {
   const units = await db.query.sasoUnits.findMany({
     with: {
       positions: true,
@@ -31,7 +31,7 @@ export default async function StaffManagementPage() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Staff Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Staff Accounts</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Create and manage staff accounts across all SASO units.</p>
         </div>
       </div>

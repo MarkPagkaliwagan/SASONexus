@@ -2,8 +2,8 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
-import { staffAccounts, sasoUnits, positions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { staffAccounts, sasoUnits, positions, verificationCodes } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === "development",
@@ -13,6 +13,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otp: { label: "OTP", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -39,6 +40,18 @@ export const authOptions: NextAuthOptions = {
 
           if (!passwordValid) {
             return null;
+          }
+
+          if (credentials.otp) {
+            const [record] = await db
+              .select()
+              .from(verificationCodes)
+              .where(and(eq(verificationCodes.email, credentials.email), eq(verificationCodes.code, credentials.otp), eq(verificationCodes.used, false)))
+              .orderBy(desc(verificationCodes.createdAt))
+              .limit(1);
+            if (!record) return null;
+            if (new Date() > record.expiresAt) return null;
+            await db.update(verificationCodes).set({ used: true }).where(eq(verificationCodes.id, record.id));
           }
 
           let unitName: string | null = null;
