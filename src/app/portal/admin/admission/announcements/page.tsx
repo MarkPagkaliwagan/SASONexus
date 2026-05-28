@@ -23,13 +23,9 @@ export default async function AnnouncementsPage() {
         <p className="text-gray-500 dark:text-gray-400 mt-1">Create and manage announcements displayed on the public page.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <AnnouncementForm />
-        </div>
-        <div className="lg:col-span-2">
-          <AnnouncementList announcements={allAnnouncements} />
-        </div>
+      <div className="space-y-8">
+        <AnnouncementForm />
+        <AnnouncementList announcements={allAnnouncements} />
       </div>
     </>
   );

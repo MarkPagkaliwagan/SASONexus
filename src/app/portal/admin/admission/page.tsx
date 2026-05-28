@@ -1,24 +1,40 @@
-import Link from "next/link";
 import { db } from "@/db";
-import { students, preAdmissions, academicYears } from "@/db/schema";
-import { AdmissionList } from "@/components/admin/admission/AdmissionList";
-import { FiClock, FiClipboard, FiArrowRight } from "react-icons/fi";
-
-const sections = [
-  { href: "/portal/admin/admission/schedules", label: "Schedules", desc: "Manage admission schedule slots", icon: FiClock },
-  { href: "/portal/admin/admission/exam-results", label: "Student Exam Results", desc: "View and manage student exam results", icon: FiClipboard },
-];
+import { students, preAdmissions, admissionSchedules, academicYears, admissionContent } from "@/db/schema";
+import { ne, desc } from "drizzle-orm";
+import { AdmissionManager } from "./AdmissionManager";
 
 export default async function AdmissionPage() {
-  const [items, preAdmissionList, academicYearList] = await Promise.all([
+  const [
+    contentRows,
+    preAdmissionItems,
+    scheduleList,
+    studentList,
+    preAdmissionList,
+    academicYearList,
+  ] = await Promise.all([
+    db.select().from(admissionContent),
+    db.query.preAdmissions.findMany({
+      where: (p) => ne(p.status, "approved"),
+      orderBy: (p) => desc(p.submittedAt),
+    }),
+    db.query.admissionSchedules.findMany({
+      orderBy: (s) => desc(s.createdAt),
+    }),
     db.query.students.findMany({
-      orderBy: (s, { desc }) => [desc(s.enrolledAt)],
+      orderBy: (s) => desc(s.enrolledAt),
     }),
     db.query.preAdmissions.findMany(),
     db.query.academicYears.findMany({
-      orderBy: (y, { desc }) => [desc(y.year)],
+      orderBy: (y) => desc(y.year),
     }),
   ]);
+
+  const contentMap: Record<string, string> = {};
+  for (const row of contentRows) contentMap[row.section] = row.content;
+
+  const scheduleMap = Object.fromEntries(
+    scheduleList.map((s) => [String(s.id), s])
+  );
   const preAdmissionMap = Object.fromEntries(
     preAdmissionList.map((p) => [p.id, p])
   );
@@ -29,33 +45,19 @@ export default async function AdmissionPage() {
       <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 mb-6">
         <span>Admission</span>
       </div>
-
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admission Management</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage reference data for the pre-admission application form.</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage admission content, applications, schedules, and exam results.</p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-        {sections.map((s) => {
-          const Icon = s.icon;
-          return (
-            <Link key={s.href} href={s.href} className="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 hover:border-[#007848] dark:hover:border-[#00a35e] hover:shadow-md hover:shadow-[#007848]/5 dark:hover:shadow-[#00a35e]/5 transition-all duration-200 cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#007848]/10 dark:bg-[#007848]/20 rounded-lg flex items-center justify-center group-hover:bg-[#007848] dark:group-hover:bg-[#007848] transition-colors duration-200">
-                  <Icon className="text-lg text-[#007848] dark:text-[#00a35e] group-hover:text-white transition-colors duration-200" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{s.label}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{s.desc}</p>
-                </div>
-                <FiArrowRight className="text-gray-300 dark:text-gray-600 group-hover:text-[#007848] dark:group-hover:text-[#00a35e] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" />
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      <AdmissionList students={items} preAdmissionMap={preAdmissionMap} academicYearOptions={academicYearOptions} />
+      <AdmissionManager
+        contentMap={contentMap}
+        preAdmissionItems={preAdmissionItems}
+        scheduleMap={scheduleMap}
+        schedules={scheduleList}
+        students={studentList}
+        preAdmissionMap={preAdmissionMap}
+        academicYearOptions={academicYearOptions}
+      />
     </>
   );
 }

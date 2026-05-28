@@ -5,14 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SignOutIconButton } from "@/components/SignOutButton";
-import { FiGrid, FiUsers, FiBookOpen, FiFileText, FiVolume2, FiClipboard, FiMenu, FiX, FiChevronRight, FiCalendar, FiUserCheck, FiFolder, FiEdit3, FiBook } from "react-icons/fi";
+import { FiGrid, FiUsers, FiBookOpen, FiVolume2, FiClipboard, FiMenu, FiX, FiChevronRight, FiCalendar, FiUserCheck, FiFolder, FiEdit3, FiBook } from "react-icons/fi";
 
 const navItems = [
   { href: "/portal/admin", label: "Dashboard", icon: FiGrid },
   { href: "/portal/admin/personnel", label: "Personnel", icon: FiUsers },
   { href: "/portal/admin/staff", label: "Staff Accounts", icon: FiUserCheck },
   { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2 },
-  { href: "/portal/admin/admission/pre-admissions", label: "Application", icon: FiFileText },
   { href: "/portal/admin/academic-setup", label: "Academic Setup", icon: FiBookOpen },
   { href: "/portal/admin/cumulative-records", label: "Cumulative Records", icon: FiFolder },
   { href: "/portal/admin/student-needs-assessment", label: "Student Needs Assessment", icon: FiEdit3 },
@@ -43,7 +42,6 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
     if (pathname.startsWith(href + "/")) {
       if (href === "/portal/admin/admission") {
         if (pathname === "/portal/admin/admission") return true;
-        if (pathname.startsWith("/portal/admin/admission/pre-admissions")) return false;
         if (pathname.startsWith("/portal/admin/admission/announcements")) return false;
         if (pathname.startsWith("/portal/admin/admission/academic-years")) return false;
         if (pathname.startsWith("/portal/admin/admission/courses")) return false;

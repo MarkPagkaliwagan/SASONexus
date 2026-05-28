@@ -415,3 +415,10 @@ export const documentClaims = pgTable("document_claims", {
 }, (table) => ({
   uniqueOrPerType: unique("uq_document_claims_type_or").on(table.type, table.orNumber),
 }));
+
+export const admissionContent = pgTable("admission_content", {
+  id: serial("id").primaryKey(),
+  section: varchar("section", { length: 50 }).notNull().unique(),
+  content: text("content").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

@@ -7,7 +7,7 @@ import {
   staffAccounts, preAdmissions, students,
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
   announcements, interviewSchedules, interviewAppointments, personnel,
-  cumulativeRecords, verificationCodes, studentNeedsAssessment, handbooksPillars, documentClaims,
+  cumulativeRecords, verificationCodes, studentNeedsAssessment, handbooksPillars, documentClaims, admissionContent,
 } from "@/db/schema";
 import { eq, ne, and, or, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -1314,4 +1314,23 @@ export async function updateDocumentClaimStatus(id: number, status: "pending" | 
 
   await db.update(documentClaims).set({ status }).where(eq(documentClaims.id, id));
   revalidatePath("/portal/admin/document-claims");
+}
+
+export async function getAdmissionContent() {
+  const rows = await db.select().from(admissionContent);
+  const map: Record<string, string> = {};
+  for (const row of rows) map[row.section] = row.content;
+  return map;
+}
+
+export async function updateAdmissionContent(section: string, content: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+
+  await db
+    .insert(admissionContent)
+    .values({ section, content, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: admissionContent.section, set: { content, updatedAt: new Date() } });
+  revalidatePath("/portal/admin/admission");
+  revalidatePath("/admission");
 }
