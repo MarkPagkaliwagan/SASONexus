@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import {
-  FiUsers, FiUserCheck, FiVolume2, FiFileText,
+  FiUsers, FiUserCheck, FiVolume2,
   FiBookOpen, FiFolder, FiEdit3, FiBook,
   FiClipboard, FiCalendar, FiGrid,
 } from "react-icons/fi";
@@ -11,7 +11,6 @@ const links = [
   { href: "/portal/admin/personnel", label: "Personnel", desc: "Manage about page team", icon: FiUsers, color: "emerald" },
   { href: "/portal/admin/staff", label: "Staff Accounts", desc: "Create & manage accounts", icon: FiUserCheck, color: "blue" },
   { href: "/portal/admin/admission/announcements", label: "Announcements", desc: "Post public updates", icon: FiVolume2, color: "amber" },
-  { href: "/portal/admin/admission/pre-admissions", label: "Applications", desc: "View pre-admissions", icon: FiFileText, color: "rose" },
   { href: "/portal/admin/academic-setup", label: "Academic Setup", desc: "Years, semesters, courses", icon: FiBookOpen, color: "violet" },
   { href: "/portal/admin/cumulative-records", label: "Cumulative Records", desc: "Student CRF records", icon: FiFolder, color: "cyan" },
   { href: "/portal/admin/student-needs-assessment", label: "SNA", desc: "Needs assessment data", icon: FiEdit3, color: "orange" },

@@ -23,11 +23,19 @@ export function DeptChart({ data }: { data: DeptData[] }) {
   return (
     <div className="h-56">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 20, right: 5, left: -20, bottom: 0 }}>
+          <defs>
+            {data.map((entry, idx) => (
+              <linearGradient key={idx} id={`deptGrad${idx}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={entry.color} stopOpacity={0.9} />
+                <stop offset="100%" stopColor={entry.color} stopOpacity={0.25} />
+              </linearGradient>
+            ))}
+          </defs>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: "#9ca3af" }}
-            axisLine={{ stroke: "#374151" }}
+            axisLine={{ stroke: "#e5e7eb" }}
             tickLine={false}
           />
           <YAxis
@@ -37,24 +45,21 @@ export function DeptChart({ data }: { data: DeptData[] }) {
             tickLine={false}
           />
           <Tooltip
-            contentStyle={{
-              background: "#1f2937",
-              border: "1px solid #374151",
-              borderRadius: "12px",
-              fontSize: "12px",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-            }}
-            labelStyle={{ color: "#e5e7eb", fontWeight: 600, marginBottom: 4 }}
-            itemStyle={{ color: "#d1d5db" }}
-            formatter={(value: number) => [value, "Staff"]}
-            labelFormatter={(label) => {
+            content={({ active, payload, label }) => {
+              if (!active || !payload || !payload.length) return null;
               const item = data.find((d) => d.label === label);
-              return item?.name ?? label;
+              return (
+                <div className="bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-700/50 rounded-xl px-4 py-3 shadow-2xl">
+                  <p className="text-xs font-semibold text-gray-100 mb-1">{item?.name ?? label}</p>
+                  <p className="text-lg font-bold" style={{ color: item?.color }}>{payload[0].value}</p>
+                  <p className="text-[11px] text-gray-400">staff members</p>
+                </div>
+              );
             }}
           />
-          <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={48}>
+          <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={56} animationDuration={800} animationEasing="ease-out">
             {data.map((entry, idx) => (
-              <Cell key={idx} fill={entry.color} />
+              <Cell key={idx} fill={`url(#deptGrad${idx})`} />
             ))}
           </Bar>
         </BarChart>

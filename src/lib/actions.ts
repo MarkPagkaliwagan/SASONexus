@@ -7,9 +7,9 @@ import {
   staffAccounts, preAdmissions, students,
   academicYears, semesters, collegeCourses, collegeDepartments, shsStrands, admissionSchedules,
   announcements, interviewSchedules, interviewAppointments, personnel,
-  cumulativeRecords, verificationCodes, studentNeedsAssessment, handbooksPillars, documentClaims, admissionContent,
+  cumulativeRecords, verificationCodes, studentNeedsAssessment, handbooksPillars, documentClaims, admissionContent, sasoUnits,
 } from "@/db/schema";
-import { eq, ne, and, or, desc, sql } from "drizzle-orm";
+import { eq, ne, and, or, desc, sql, isNotNull, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
@@ -1333,4 +1333,37 @@ export async function updateAdmissionContent(section: string, content: string) {
     .onConflictDoUpdate({ target: admissionContent.section, set: { content, updatedAt: new Date() } });
   revalidatePath("/portal/admin/admission");
   revalidatePath("/admission");
+}
+
+export async function getDashboardChartData() {
+  const [aByYear, aByLevel, pByUnit, cByStatus, sByLevel, c, a, s, cr] = await Promise.all([
+    db.select({ name: preAdmissions.academicYear, value: count() })
+      .from(preAdmissions).where(isNotNull(preAdmissions.academicYear)).groupBy(preAdmissions.academicYear).orderBy(preAdmissions.academicYear),
+    db.select({ name: preAdmissions.applicationLevel, value: count() })
+      .from(preAdmissions).where(isNotNull(preAdmissions.applicationLevel)).groupBy(preAdmissions.applicationLevel).orderBy(preAdmissions.applicationLevel),
+    db.select({ name: sasoUnits.name, value: count() })
+      .from(sasoUnits).leftJoin(personnel, eq(personnel.unitId, sasoUnits.id)).where(isNotNull(sasoUnits.name)).groupBy(sasoUnits.id, sasoUnits.name).orderBy(sasoUnits.name),
+    db.select({ name: documentClaims.status, value: count() })
+      .from(documentClaims).where(isNotNull(documentClaims.status)).groupBy(documentClaims.status).orderBy(documentClaims.status),
+    db.select({ name: students.applicationLevel, value: count() })
+      .from(students).where(isNotNull(students.applicationLevel)).groupBy(students.applicationLevel).orderBy(students.applicationLevel),
+    db.select({ value: count() }).from(studentNeedsAssessment).where(eq(studentNeedsAssessment.supportCounseling, true)),
+    db.select({ value: count() }).from(studentNeedsAssessment).where(eq(studentNeedsAssessment.supportAcademic, true)),
+    db.select({ value: count() }).from(studentNeedsAssessment).where(eq(studentNeedsAssessment.supportScholarship, true)),
+    db.select({ value: count() }).from(studentNeedsAssessment).where(eq(studentNeedsAssessment.supportCareer, true)),
+  ]);
+
+  return {
+    admissionsByYear: aByYear.map((d) => ({ name: d.name ?? "Unknown", value: d.value })),
+    admissionsByLevel: aByLevel.map((d) => ({ name: d.name ?? "Unknown", value: d.value })),
+    personnelByUnit: pByUnit.map((d) => ({ name: d.name ?? "Unknown", value: d.value })),
+    claimsByStatus: cByStatus.map((d) => ({ name: d.name ?? "Unknown", value: d.value })),
+    studentsByLevel: sByLevel.map((d) => ({ name: d.name ?? "Unknown", value: d.value })),
+    snaSupport: [
+      { name: "Counseling", value: c[0]?.value ?? 0 },
+      { name: "Academic", value: a[0]?.value ?? 0 },
+      { name: "Scholarship", value: s[0]?.value ?? 0 },
+      { name: "Career", value: cr[0]?.value ?? 0 },
+    ],
+  };
 }
