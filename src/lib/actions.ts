@@ -18,6 +18,14 @@ async function requireAdmin() {
   if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
 }
 
+async function requirePermission(permission: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthorized");
+  if (session.user.role === "super_admin") return;
+  if (Array.isArray(session.user.permissions) && session.user.permissions.includes(permission)) return;
+  throw new Error("Forbidden");
+}
+
 export async function createStaffAccount(formData: FormData) {
   await requireAdmin();
 
@@ -27,6 +35,7 @@ export async function createStaffAccount(formData: FormData) {
   const unitId = parseInt(formData.get("unitId") as string);
   const positionId = parseInt(formData.get("positionId") as string);
   const avatar = formData.get("avatar") as File | null;
+  const permissions = formData.getAll("permissions") as string[];
 
   if (!name || !email || !password || !unitId || !positionId) {
     throw new Error("All fields are required");
@@ -56,9 +65,16 @@ export async function createStaffAccount(formData: FormData) {
     role: "staff",
     unitId,
     positionId,
+    permissions,
     avatarUrl,
   });
 
+  revalidatePath("/portal/admin/staff");
+}
+
+export async function updateStaffPermissions(staffId: number, permissions: string[]) {
+  await requireAdmin();
+  await db.update(staffAccounts).set({ permissions }).where(eq(staffAccounts.id, staffId));
   revalidatePath("/portal/admin/staff");
 }
 
@@ -141,7 +157,7 @@ export async function activateStaff(id: number) {
 // ── Academic Years ──
 
 export async function createAcademicYear(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const year = formData.get("year") as string;
   if (!year) throw new Error("Year is required");
   await db.insert(academicYears).values({ year });
@@ -149,7 +165,7 @@ export async function createAcademicYear(formData: FormData) {
 }
 
 export async function toggleAcademicYear(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const item = await db.select().from(academicYears).where(eq(academicYears.id, id)).limit(1);
   if (!item[0]) throw new Error("Not found");
   await db.update(academicYears).set({ isActive: !item[0].isActive }).where(eq(academicYears.id, id));
@@ -157,7 +173,7 @@ export async function toggleAcademicYear(id: number) {
 }
 
 export async function deleteAcademicYear(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   await db.delete(academicYears).where(eq(academicYears.id, id));
   revalidatePath("/portal/admin/admission/academic-years");
 }
@@ -165,7 +181,7 @@ export async function deleteAcademicYear(id: number) {
 // ── Semesters ──
 
 export async function createSemester(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const name = formData.get("name") as string;
   const academicYearId = parseInt(formData.get("academicYearId") as string);
   if (!name || !academicYearId) throw new Error("Name and academic year are required");
@@ -174,7 +190,7 @@ export async function createSemester(formData: FormData) {
 }
 
 export async function toggleSemester(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const item = await db.select().from(semesters).where(eq(semesters.id, id)).limit(1);
   if (!item[0]) throw new Error("Not found");
   await db.update(semesters).set({ isActive: !item[0].isActive }).where(eq(semesters.id, id));
@@ -182,7 +198,7 @@ export async function toggleSemester(id: number) {
 }
 
 export async function deleteSemester(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   await db.delete(semesters).where(eq(semesters.id, id));
   revalidatePath("/portal/admin/admission/academic-years");
 }
@@ -190,7 +206,7 @@ export async function deleteSemester(id: number) {
 // ── College Courses ──
 
 export async function createCourse(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const name = formData.get("name") as string;
   const code = formData.get("code") as string;
   const department = formData.get("department") as string;
@@ -201,7 +217,7 @@ export async function createCourse(formData: FormData) {
 }
 
 export async function upsertCollegeDepartment(name: string, logo: string | null) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const existing = await db.select().from(collegeDepartments).where(eq(collegeDepartments.name, name)).limit(1);
   if (existing[0]) {
     if (logo) {
@@ -214,7 +230,7 @@ export async function upsertCollegeDepartment(name: string, logo: string | null)
 }
 
 export async function toggleCourse(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const item = await db.select().from(collegeCourses).where(eq(collegeCourses.id, id)).limit(1);
   if (!item[0]) throw new Error("Not found");
   await db.update(collegeCourses).set({ isActive: !item[0].isActive }).where(eq(collegeCourses.id, id));
@@ -222,13 +238,13 @@ export async function toggleCourse(id: number) {
 }
 
 export async function deleteCourse(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   await db.delete(collegeCourses).where(eq(collegeCourses.id, id));
   revalidatePath("/portal/admin/admission/courses");
 }
 
 export async function updateCourse(id: number, formData: FormData) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const name = formData.get("name") as string;
   const code = formData.get("code") as string;
   const department = formData.get("department") as string;
@@ -242,7 +258,7 @@ export async function updateCourse(id: number, formData: FormData) {
 }
 
 export async function updateCollegeDepartment(oldName: string, newName: string, logo: string | null) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const existing = await db.select().from(collegeDepartments).where(eq(collegeDepartments.name, oldName)).limit(1);
   if (!existing[0]) throw new Error("Department not found");
   await db.update(collegeDepartments).set({ name: newName, logo: logo ?? existing[0].logo }).where(eq(collegeDepartments.name, oldName));
@@ -253,7 +269,7 @@ export async function updateCollegeDepartment(oldName: string, newName: string, 
 }
 
 export async function deleteCollegeDepartment(name: string) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const courses = await db.select().from(collegeCourses).where(eq(collegeCourses.department, name)).limit(1);
   if (courses[0]) throw new Error("Cannot delete department with existing courses. Remove or reassign courses first.");
   await db.delete(collegeDepartments).where(eq(collegeDepartments.name, name));
@@ -263,7 +279,7 @@ export async function deleteCollegeDepartment(name: string) {
 // ── SHS Strands ──
 
 export async function createStrand(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const name = formData.get("name") as string;
   const code = formData.get("code") as string;
   if (!name) throw new Error("Strand name is required");
@@ -272,7 +288,7 @@ export async function createStrand(formData: FormData) {
 }
 
 export async function toggleStrand(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   const item = await db.select().from(shsStrands).where(eq(shsStrands.id, id)).limit(1);
   if (!item[0]) throw new Error("Not found");
   await db.update(shsStrands).set({ isActive: !item[0].isActive }).where(eq(shsStrands.id, id));
@@ -280,7 +296,7 @@ export async function toggleStrand(id: number) {
 }
 
 export async function deleteStrand(id: number) {
-  await requireAdmin();
+  await requirePermission("academic-setup");
   await db.delete(shsStrands).where(eq(shsStrands.id, id));
   revalidatePath("/portal/admin/admission/strands");
 }
@@ -353,7 +369,7 @@ export async function getActiveAnnouncements() {
 }
 
 export async function createAnnouncement(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("announcements");
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
   const category = formData.get("category") as string;
@@ -369,7 +385,7 @@ export async function createAnnouncement(formData: FormData) {
 }
 
 export async function toggleAnnouncement(id: number) {
-  await requireAdmin();
+  await requirePermission("announcements");
   const item = await db.select().from(announcements).where(eq(announcements.id, id)).limit(1);
   if (!item[0]) throw new Error("Not found");
   await db.update(announcements).set({ isActive: !item[0].isActive }).where(eq(announcements.id, id));
@@ -377,7 +393,7 @@ export async function toggleAnnouncement(id: number) {
 }
 
 export async function deleteAnnouncement(id: number) {
-  await requireAdmin();
+  await requirePermission("announcements");
   await db.delete(announcements).where(eq(announcements.id, id));
   revalidatePath("/portal/admin/admission/announcements");
 }
@@ -385,7 +401,7 @@ export async function deleteAnnouncement(id: number) {
 // ── Admission Schedules ──
 
 export async function createSchedule(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("admission");
   const level = formData.get("level") as string;
   const date = formData.get("date") as string;
   const time = formData.get("time") as string;
@@ -396,13 +412,13 @@ export async function createSchedule(formData: FormData) {
 }
 
 export async function updateScheduleSlots(id: number, maxSlots: number) {
-  await requireAdmin();
+  await requirePermission("admission");
   await db.update(admissionSchedules).set({ maxSlots, availableSlots: maxSlots }).where(eq(admissionSchedules.id, id));
   revalidatePath("/portal/admin/admission/schedules");
 }
 
 export async function toggleSchedule(id: number) {
-  await requireAdmin();
+  await requirePermission("admission");
   const item = await db.select().from(admissionSchedules).where(eq(admissionSchedules.id, id)).limit(1);
   if (!item[0]) throw new Error("Not found");
   await db.update(admissionSchedules).set({ isAvailable: !item[0].isAvailable }).where(eq(admissionSchedules.id, id));
@@ -410,7 +426,7 @@ export async function toggleSchedule(id: number) {
 }
 
 export async function deleteSchedule(id: number) {
-  await requireAdmin();
+  await requirePermission("admission");
   await db.delete(admissionSchedules).where(eq(admissionSchedules.id, id));
   revalidatePath("/portal/admin/admission/schedules");
 }
@@ -418,7 +434,7 @@ export async function deleteSchedule(id: number) {
 // ── Pre-Admissions ──
 
 export async function updatePreAdmissionStatus(id: number, status: string) {
-  await requireAdmin();
+  await requirePermission("admission");
 
   const [item] = await db.select().from(preAdmissions).where(eq(preAdmissions.id, id)).limit(1);
   if (!item) throw new Error("Not found");
@@ -452,14 +468,14 @@ export async function updatePreAdmissionStatus(id: number, status: string) {
 // ── Admissions (Students) ──
 
 export async function updateStudentResult(id: number, value: string) {
-  await requireAdmin();
+  await requirePermission("admission");
   const col = value === "took-exam" || value === "no-show" ? { status: value } : { examResult: value };
   await db.update(students).set(col).where(eq(students.id, id));
   revalidatePath("/portal/admin/admission");
 }
 
 export async function rescheduleStudent(id: number, scheduleId: string) {
-  await requireAdmin();
+  await requirePermission("admission");
 
   const [item] = await db.select().from(students).where(eq(students.id, id)).limit(1);
   if (!item) throw new Error("Not found");
@@ -481,31 +497,31 @@ export async function rescheduleStudent(id: number, scheduleId: string) {
 }
 
 export async function deleteStudent(id: number) {
-  await requireAdmin();
+  await requirePermission("admission");
   await db.delete(students).where(eq(students.id, id));
   revalidatePath("/portal/admin/admission");
 }
 
 export async function deletePreAdmission(id: number) {
-  await requireAdmin();
+  await requirePermission("admission");
   await db.delete(preAdmissions).where(eq(preAdmissions.id, id));
   revalidatePath("/portal/admin/admission/pre-admissions");
 }
 
 export async function updateExamResult(id: number, examResult: string) {
-  await requireAdmin();
+  await requirePermission("admission");
   await db.update(preAdmissions).set({ examResult }).where(eq(preAdmissions.id, id));
   revalidatePath("/portal/admin/admission/pre-admissions");
 }
 
 export async function saveStudentExamResult(id: number, examResult: string) {
-  await requireAdmin();
+  await requirePermission("admission");
   await db.update(students).set({ examResult, status: "took-exam" }).where(eq(students.id, id));
   revalidatePath("/portal/admin/admission");
 }
 
 export async function reschedulePreAdmission(id: number, scheduleId: string) {
-  await requireAdmin();
+  await requirePermission("admission");
 
   const [item] = await db.select().from(preAdmissions).where(eq(preAdmissions.id, id)).limit(1);
   if (!item) throw new Error("Not found");
@@ -540,7 +556,7 @@ export async function reschedulePreAdmission(id: number, scheduleId: string) {
 // ── Interview Schedules ──
 
 export async function createInterviewSchedule(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("interview");
   const type = formData.get("type") as string;
   const department = formData.get("department") as string;
   const gradeLevel = formData.get("gradeLevel") as string;
@@ -556,7 +572,7 @@ export async function createInterviewSchedule(formData: FormData) {
 }
 
 export async function toggleInterviewSchedule(id: number) {
-  await requireAdmin();
+  await requirePermission("interview");
   const item = await db.select().from(interviewSchedules).where(eq(interviewSchedules.id, id)).limit(1);
   if (!item[0]) throw new Error("Not found");
   await db.update(interviewSchedules).set({ isActive: !item[0].isActive }).where(eq(interviewSchedules.id, id));
@@ -564,7 +580,7 @@ export async function toggleInterviewSchedule(id: number) {
 }
 
 export async function deleteInterviewSchedule(id: number) {
-  await requireAdmin();
+  await requirePermission("interview");
   await db.delete(interviewSchedules).where(eq(interviewSchedules.id, id));
   revalidatePath("/portal/admin/interview");
 }
@@ -749,7 +765,7 @@ export async function markNoShowWithReason(id: number, reason: string, newSchedu
 // ── Personnel ──
 
 export async function createPersonnel(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("personnel");
 
   const name = formData.get("name") as string;
   const position = formData.get("position") as string;
@@ -791,19 +807,19 @@ export async function createPersonnel(formData: FormData) {
 }
 
 export async function deactivatePersonnel(id: number) {
-  await requireAdmin();
+  await requirePermission("personnel");
   await db.update(personnel).set({ isActive: false }).where(eq(personnel.id, id));
   revalidatePath("/portal/admin/personnel");
 }
 
 export async function activatePersonnel(id: number) {
-  await requireAdmin();
+  await requirePermission("personnel");
   await db.update(personnel).set({ isActive: true }).where(eq(personnel.id, id));
   revalidatePath("/portal/admin/personnel");
 }
 
 export async function deletePersonnel(id: number) {
-  await requireAdmin();
+  await requirePermission("personnel");
   await db.delete(personnel).where(eq(personnel.id, id));
   revalidatePath("/portal/admin/personnel");
 }
@@ -1065,7 +1081,7 @@ export async function saveCumulativeRecord(formData: FormData) {
 }
 
 export async function updatePersonnel(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("personnel");
 
   const id = parseInt(formData.get("id") as string);
   const name = formData.get("name") as string;
@@ -1184,7 +1200,7 @@ export async function getStudentNeedsAssessment(studentId: string) {
 }
 
 export async function updateNeedsAssessmentStatus(id: number, status: string) {
-  await requireAdmin();
+  await requirePermission("student-needs-assessment");
   await db.update(studentNeedsAssessment).set({ status, updatedAt: new Date() }).where(eq(studentNeedsAssessment.id, id));
   revalidatePath("/portal/admin/student-needs-assessment");
 }
@@ -1199,7 +1215,7 @@ export async function getHandbooksPillars(type?: "handbook" | "pillar") {
 }
 
 export async function createHandbookPillar(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("handbooks-pillars");
 
   const type = formData.get("type") as string;
   const title = formData.get("title") as string;
@@ -1215,7 +1231,7 @@ export async function createHandbookPillar(formData: FormData) {
 }
 
 export async function updateHandbookPillar(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("handbooks-pillars");
 
   const id = parseInt(formData.get("id") as string);
   const type = formData.get("type") as string;
@@ -1237,7 +1253,7 @@ export async function updateHandbookPillar(formData: FormData) {
 }
 
 export async function deleteHandbookPillar(id: number) {
-  await requireAdmin();
+  await requirePermission("handbooks-pillars");
 
   await db.delete(handbooksPillars).where(eq(handbooksPillars.id, id));
   revalidatePath("/portal/admin/handbooks-pillars");
@@ -1281,7 +1297,7 @@ export async function submitDocumentClaim(data: {
 }
 
 export async function getDocumentClaims() {
-  await requireAdmin();
+  await requirePermission("document-claims");
 
   return await db
     .select()
@@ -1290,7 +1306,7 @@ export async function getDocumentClaims() {
 }
 
 export async function updateDocumentClaimStatus(id: number, status: "pending" | "claimed") {
-  await requireAdmin();
+  await requirePermission("document-claims");
 
   await db.update(documentClaims).set({ status }).where(eq(documentClaims.id, id));
   revalidatePath("/portal/admin/document-claims");
@@ -1304,7 +1320,7 @@ export async function getAdmissionContent() {
 }
 
 export async function updateAdmissionContent(section: string, content: string) {
-  await requireAdmin();
+  await requirePermission("admission");
 
   await db
     .insert(admissionContent)

@@ -12,7 +12,7 @@ export default async function StaffAccountsPage() {
     },
   });
 
-  const allStaff = await db.query.staffAccounts.findMany({
+  const rawStaff = await db.query.staffAccounts.findMany({
     where: eq(staffAccounts.role, "staff"),
     with: {
       unit: true,
@@ -20,6 +20,11 @@ export default async function StaffAccountsPage() {
     },
     orderBy: (staff, { desc }) => [desc(staff.createdAt)],
   });
+
+  const allStaff = rawStaff.map((s) => ({
+    ...s,
+    permissions: (s.permissions ?? []) as string[],
+  }));
 
   return (
     <>

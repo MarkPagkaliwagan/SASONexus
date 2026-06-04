@@ -88,6 +88,7 @@ export const authOptions: NextAuthOptions = {
             unitName,
             positionId: user.positionId,
             positionName,
+            permissions: (user.permissions ?? []) as string[],
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -107,6 +108,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.unitId = user.unitId;
         token.positionId = user.positionId;
+        token.permissions = user.permissions;
       }
       return token;
     },
@@ -116,6 +118,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
         session.user.unitId = token.unitId as number | null;
         session.user.positionId = token.positionId as number | null;
+        session.user.permissions = token.permissions as string[] | undefined;
       }
       return session;
     },

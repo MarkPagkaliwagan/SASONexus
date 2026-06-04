@@ -4,16 +4,34 @@ import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/SignOutButton";
 import ThemeToggle from "@/components/ThemeToggle";
 import ThemeProvider from "@/components/ThemeProvider";
-import Image from "next/image";
+import Link from "next/link";
+
+const MODULE_LINKS: Record<string, { label: string; description: string }> = {
+  personnel: { label: "Personnel", description: "Manage personnel directory" },
+  announcements: { label: "Announcements", description: "Manage announcements" },
+  "academic-setup": { label: "Academic Setup", description: "Academic years, courses, strands" },
+  "cumulative-records": { label: "Cumulative Records", description: "View CRF submissions" },
+  "student-needs-assessment": { label: "Student Needs Assessment", description: "View SNA submissions" },
+  "handbooks-pillars": { label: "Handbooks & Pillars", description: "Manage content" },
+  admission: { label: "Admission", description: "Manage admission content" },
+  interview: { label: "Interview", description: "Manage interview schedules" },
+  "document-claims": { label: "Document Claims", description: "Track document claims" },
+};
 
 export default async function StaffDashboard() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "staff") {
+  if (!session) {
     redirect("/login");
   }
 
-  const { name, avatarUrl, unitName, positionName } = session.user;
+  const permissions = session.user.permissions ?? [];
+
+  if (session.user.role === "super_admin" || permissions.length > 0) {
+    redirect("/portal/admin");
+  }
+
+  const { name, unitName, positionName } = session.user;
 
   return (
     <ThemeProvider>
@@ -21,26 +39,14 @@ export default async function StaffDashboard() {
         <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {avatarUrl ? (
-                <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0">
-                  <Image
-                    src={avatarUrl}
-                    alt={name ?? ""}
-                    width={36}
-                    height={36}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-9 h-9 bg-gradient-to-br from-[#007848] to-[#005a36] rounded-xl flex items-center justify-center shrink-0">
-                  <span className="text-white font-bold text-sm">
-                    {name?.charAt(0).toUpperCase() ?? "S"}
-                  </span>
-                </div>
-              )}
+              <div className="w-9 h-9 bg-gradient-to-br from-[#007848] to-[#005a36] rounded-xl flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-sm">
+                  {name?.charAt(0).toUpperCase() ?? "S"}
+                </span>
+              </div>
               <div>
-                <span className="font-semibold text-gray-900 dark:text-white">{unitName}</span>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight">{positionName}</p>
+                <span className="font-semibold text-gray-900 dark:text-white">{unitName ?? "SASO"}</span>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight">{positionName ?? "Staff"}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -68,7 +74,7 @@ export default async function StaffDashboard() {
             </p>
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8">
               <p className="text-sm text-gray-400 dark:text-gray-500">
-                Your department dashboard is ready. Features and content will be added here.
+                Your account has no module access. Contact your administrator to assign permissions.
               </p>
             </div>
           </div>

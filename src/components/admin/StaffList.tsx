@@ -12,6 +12,7 @@ interface StaffMember {
   createdAt: Date;
   unit: { name: string } | null;
   position: { name: string } | null;
+  permissions: string[];
 }
 
 export function StaffList({ staff }: { staff: StaffMember[] }) {
@@ -89,6 +90,15 @@ export function StaffList({ staff }: { staff: StaffMember[] }) {
                   <span className="text-xs text-gray-400 dark:text-gray-500">&middot; {member.position.name}</span>
                 )}
               </div>
+              {member.permissions.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {member.permissions.map((p) => (
+                    <span key={p} className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-medium">
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               onClick={() => handleToggle(member)}

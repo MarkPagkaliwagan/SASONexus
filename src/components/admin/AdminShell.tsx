@@ -7,17 +7,17 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { SignOutIconButton } from "@/components/SignOutButton";
 import { FiGrid, FiUsers, FiBookOpen, FiVolume2, FiClipboard, FiMenu, FiX, FiChevronRight, FiCalendar, FiUserCheck, FiFolder, FiEdit3, FiBook } from "react-icons/fi";
 
-const navItems = [
-  { href: "/portal/admin", label: "Dashboard", icon: FiGrid },
-  { href: "/portal/admin/personnel", label: "Personnel", icon: FiUsers },
-  { href: "/portal/admin/staff", label: "Staff Accounts", icon: FiUserCheck },
-  { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2 },
-  { href: "/portal/admin/academic-setup", label: "Academic Setup", icon: FiBookOpen },
-  { href: "/portal/admin/cumulative-records", label: "Cumulative Records", icon: FiFolder },
-  { href: "/portal/admin/student-needs-assessment", label: "Student Needs Assessment", icon: FiEdit3 },
-  { href: "/portal/admin/handbooks-pillars", label: "Handbooks & Pillars", icon: FiBook },
-  { href: "/portal/admin/admission", label: "Admission", icon: FiClipboard },
-  { href: "/portal/admin/interview", label: "Interview", icon: FiCalendar },
+const allNavItems = [
+  { href: "/portal/admin", label: "Dashboard", icon: FiGrid, permission: null },
+  { href: "/portal/admin/personnel", label: "Personnel", icon: FiUsers, permission: "personnel" },
+  { href: "/portal/admin/staff", label: "Staff Accounts", icon: FiUserCheck, permission: null },
+  { href: "/portal/admin/admission/announcements", label: "Announcements", icon: FiVolume2, permission: "announcements" },
+  { href: "/portal/admin/academic-setup", label: "Academic Setup", icon: FiBookOpen, permission: "academic-setup" },
+  { href: "/portal/admin/cumulative-records", label: "Cumulative Records", icon: FiFolder, permission: "cumulative-records" },
+  { href: "/portal/admin/student-needs-assessment", label: "Student Needs Assessment", icon: FiEdit3, permission: "student-needs-assessment" },
+  { href: "/portal/admin/handbooks-pillars", label: "Handbooks & Pillars", icon: FiBook, permission: "handbooks-pillars" },
+  { href: "/portal/admin/admission", label: "Admission", icon: FiClipboard, permission: "admission" },
+  { href: "/portal/admin/interview", label: "Interview", icon: FiCalendar, permission: "interview" },
 ];
 
 interface Props {
@@ -25,9 +25,17 @@ interface Props {
   userName: string;
   userInitial: string;
   adminAvatar: string | null;
+  isSuperAdmin?: boolean;
+  permissions?: string[];
 }
 
-export default function AdminShell({ children, userName, userInitial, adminAvatar }: Props) {
+export default function AdminShell({ children, userName, userInitial, adminAvatar, isSuperAdmin = false, permissions = [] }: Props) {
+
+  const navItems = allNavItems.filter((item) => {
+    if (isSuperAdmin) return true;
+    if (item.permission === null) return item.href === "/portal/admin";
+    return permissions.includes(item.permission);
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -120,7 +128,7 @@ export default function AdminShell({ children, userName, userInitial, adminAvata
             </div>
             <Link href="/portal/admin/profile" className="flex-1 min-w-0 hover:opacity-80 transition">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{userName}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 truncate">Super Admin</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{isSuperAdmin ? "Super Admin" : "Staff"}</p>
             </Link>
           </div>
           <SignOutIconButton className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition w-full" />

@@ -8,6 +8,7 @@ import {
   integer,
   boolean,
   unique,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -41,6 +42,7 @@ export const staffAccounts = pgTable("staff_accounts", {
   role: varchar("role", { length: 50 }).notNull().default("staff"),
   unitId: integer("unit_id").references(() => sasoUnits.id),
   positionId: integer("position_id").references(() => positions.id),
+  permissions: jsonb("permissions").notNull().default([]),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

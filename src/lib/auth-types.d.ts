@@ -9,6 +9,7 @@ declare module "next-auth" {
     unitSlug?: string | null;
     positionId?: number | null;
     positionName?: string | null;
+    permissions?: string[];
   }
 
   interface Session {
@@ -24,6 +25,7 @@ declare module "next-auth" {
       unitSlug?: string | null;
       positionId?: number | null;
       positionName?: string | null;
+      permissions?: string[];
     };
   }
 }
@@ -38,5 +40,6 @@ declare module "next-auth/jwt" {
     unitSlug?: string | null;
     positionId?: number | null;
     positionName?: string | null;
+    permissions?: string[];
   }
 }

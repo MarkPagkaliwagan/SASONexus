@@ -2,7 +2,19 @@
 
 import { useState, useRef } from "react";
 import { createStaffAccount } from "@/lib/actions";
-import { FiCamera, FiLoader } from "react-icons/fi";
+import { FiCamera, FiLoader, FiCheck } from "react-icons/fi";
+
+const PERMISSION_OPTIONS = [
+  { key: "personnel", label: "Personnel" },
+  { key: "announcements", label: "Announcements" },
+  { key: "academic-setup", label: "Academic Setup" },
+  { key: "cumulative-records", label: "Cumulative Records" },
+  { key: "student-needs-assessment", label: "Student Needs Assessment" },
+  { key: "handbooks-pillars", label: "Handbooks & Pillars" },
+  { key: "admission", label: "Admission" },
+  { key: "interview", label: "Interview" },
+  { key: "document-claims", label: "Document Claims" },
+];
 
 interface SasoUnit {
   id: number;
@@ -187,6 +199,34 @@ export function StaffForm({ units }: { units: SasoUnit[] }) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Module Access
+          </label>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+            Select which modules this staff can access.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {PERMISSION_OPTIONS.map((perm) => (
+              <label
+                key={perm.key}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-[#007848] dark:hover:border-[#00a35e] transition has-checked:bg-[#007848]/5 dark:has-checked:bg-[#00a35e]/10 has-checked:border-[#007848] dark:has-checked:border-[#00a35e]"
+              >
+                <input
+                  type="checkbox"
+                  name="permissions"
+                  value={perm.key}
+                  className="sr-only peer"
+                />
+                <div className="w-4 h-4 rounded border border-gray-300 dark:border-gray-600 flex items-center justify-center peer-checked:bg-[#007848] peer-checked:border-[#007848] dark:peer-checked:bg-[#00a35e] dark:peer-checked:border-[#00a35e] transition">
+                  <FiCheck className="text-white text-[10px] hidden peer-checked:block" />
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{perm.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <button

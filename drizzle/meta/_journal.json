@@ -134,6 +134,55 @@
       "when": 1748327093000,
       "tag": "0018_add_cumulative_records",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1748400000000,
+      "tag": "0019_add_student_needs_assessment",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1748500000000,
+      "tag": "0020_add_handbooks_pillars",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1748600000000,
+      "tag": "0021_add_handbooks_pillars_image",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1748700000000,
+      "tag": "0022_add_document_claims",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1748800000000,
+      "tag": "0023_add_document_claims_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1748900000000,
+      "tag": "0024_add_admission_content",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1779000000000,
+      "tag": "0025_add_staff_permissions",
+      "breakpoints": true
     }
   ]
 }
