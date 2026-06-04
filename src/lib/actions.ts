@@ -13,12 +13,13 @@ import { eq, ne, and, or, desc, sql, isNotNull, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
-export async function createStaffAccount(formData: FormData) {
+async function requireAdmin() {
   const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+}
 
-  if (!session || session.user.role !== "super_admin") {
-    throw new Error("Unauthorized");
-  }
+export async function createStaffAccount(formData: FormData) {
+  await requireAdmin();
 
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
@@ -116,11 +117,7 @@ export async function submitPreAdmission(formData: FormData) {
 }
 
 export async function deactivateStaff(id: number) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "super_admin") {
-    throw new Error("Unauthorized");
-  }
+  await requireAdmin();
 
   await db
     .update(staffAccounts)
@@ -131,11 +128,7 @@ export async function deactivateStaff(id: number) {
 }
 
 export async function activateStaff(id: number) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "super_admin") {
-    throw new Error("Unauthorized");
-  }
+  await requireAdmin();
 
   await db
     .update(staffAccounts)
@@ -143,11 +136,6 @@ export async function activateStaff(id: number) {
     .where(eq(staffAccounts.id, id));
 
   revalidatePath("/portal/admin/staff");
-}
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
 }
 
 // ── Academic Years ──
@@ -1196,10 +1184,7 @@ export async function getStudentNeedsAssessment(studentId: string) {
 }
 
 export async function updateNeedsAssessmentStatus(id: number, status: string) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") {
-    throw new Error("Unauthorized");
-  }
+  await requireAdmin();
   await db.update(studentNeedsAssessment).set({ status, updatedAt: new Date() }).where(eq(studentNeedsAssessment.id, id));
   revalidatePath("/portal/admin/student-needs-assessment");
 }
@@ -1214,8 +1199,7 @@ export async function getHandbooksPillars(type?: "handbook" | "pillar") {
 }
 
 export async function createHandbookPillar(formData: FormData) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+  await requireAdmin();
 
   const type = formData.get("type") as string;
   const title = formData.get("title") as string;
@@ -1231,8 +1215,7 @@ export async function createHandbookPillar(formData: FormData) {
 }
 
 export async function updateHandbookPillar(formData: FormData) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+  await requireAdmin();
 
   const id = parseInt(formData.get("id") as string);
   const type = formData.get("type") as string;
@@ -1254,8 +1237,7 @@ export async function updateHandbookPillar(formData: FormData) {
 }
 
 export async function deleteHandbookPillar(id: number) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+  await requireAdmin();
 
   await db.delete(handbooksPillars).where(eq(handbooksPillars.id, id));
   revalidatePath("/portal/admin/handbooks-pillars");
@@ -1299,8 +1281,7 @@ export async function submitDocumentClaim(data: {
 }
 
 export async function getDocumentClaims() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+  await requireAdmin();
 
   return await db
     .select()
@@ -1309,8 +1290,7 @@ export async function getDocumentClaims() {
 }
 
 export async function updateDocumentClaimStatus(id: number, status: "pending" | "claimed") {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+  await requireAdmin();
 
   await db.update(documentClaims).set({ status }).where(eq(documentClaims.id, id));
   revalidatePath("/portal/admin/document-claims");
@@ -1324,8 +1304,7 @@ export async function getAdmissionContent() {
 }
 
 export async function updateAdmissionContent(section: string, content: string) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "super_admin") throw new Error("Unauthorized");
+  await requireAdmin();
 
   await db
     .insert(admissionContent)
