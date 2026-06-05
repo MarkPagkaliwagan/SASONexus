@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   description:
     "Student Affairs and Services Office of San Pablo Colleges - Supporting students in their academic journey.",
   icons: [
-    { rel: "icon", url: "/SASO.svg", type: "image/svg+xml" },
+    { rel: "icon", url: "/SASOLOGO.png" },
     { rel: "apple-touch-icon", url: "/SASOLOGO.png" },
   ],
   openGraph: {
